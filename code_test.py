@@ -47,7 +47,7 @@ DEFAULT_WINDOW=6
 #数据为realAWSCloudwatch/ec2_cpu_utilization_5f5533.csv的数据；
 #数据是从2.14.2.14-2.28间每隔5分钟的数据；
 #已经完成异常标记；1表示异常，0表示正常
-test_data = pd.read_csv('time_series_detector_testdata/data/realAWSCloudwatch/ec2_cpu_utilization_5f5533.csv')
+test_data = pd.read_csv('data/realAWSCloudwatch/ec2_cpu_utilization_5f5533.csv')
 
 test_data.head(3)
 
@@ -59,9 +59,10 @@ test_data.dtypes
 
 
 # In[9]:
+from time_series_detector.common.tsd_common import split_time_series
 
-
-p = get_fitting_features(test_data.value)
+split_ts = split_time_series(list(test_data.value))
+p = get_fitting_features(split_ts)
 
 
 # In[11]:
@@ -71,12 +72,12 @@ time_series_moving_average(test_data.value[4])
 
 
 # In[13]:
-
-
-for w in range(1, min(50, 6), 5):
-         temp = np.mean(test_data.value[-w:])
-         temp_list.append(temp)
-        return list(np.array(temp_list) - x[-1])
+#
+#
+# for w in range(1, min(50, 6), 5):
+#          temp = np.mean(test_data.value[-w:])
+#          temp_list.append(temp)
+#         return list(np.array(temp_list) - x[-1])
 
 
 # In[6]:
@@ -89,7 +90,7 @@ test_data.plot()
 
 
 #标准化数据
-test_data.nmvalue= get_fitting_features([test_data.value,test_data.value,test_data.value,test_data.value,list(test_data.value)])
+test_data.nmvalue = get_fitting_features([test_data.value,test_data.value,test_data.value,test_data.value,list(test_data.value)])
 
 
 # In[34]:
