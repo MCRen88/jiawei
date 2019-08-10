@@ -33,6 +33,7 @@ class Gbdt(object):
     """
 
     def __init__(self, threshold=0.15, n_estimators=300, max_depth=10, learning_rate=0.05):
+        # type: (object, object, object, object) -> object
         """
         :param threshold: The critical point of normal.
         :param n_estimators: The number of boosting stages to perform. Gradient boosting is fairly robust to over-fitting so a large number usually results in better performance.
@@ -60,7 +61,9 @@ class Gbdt(object):
                 features.append(temp)
         return features
 
-    def gbdt_train(self, data, task_id, window=DEFAULT_WINDOW):
+
+
+    def gbdt_train(self, data, window=DEFAULT_WINDOW):
         """
         Train a gbdt model.
 
@@ -81,11 +84,14 @@ class Gbdt(object):
         try:
             grd = GradientBoostingClassifier(n_estimators=self.n_estimators, max_depth=self.max_depth, learning_rate=self.learning_rate)
             grd.fit(X_train, y_train)
-            model_name = MODEL_PATH + task_id + "_model"
-            joblib.dump(grd, model_name)
+            # model_name = MODEL_PATH + task_id + "_model"
+            # joblib.dump(grd, model_name)
         except Exception as ex:
             return TSD_TRAIN_ERR, str(ex)
         return TSD_OP_SUCCESS, ""
+
+
+
 
     def predict(self, X, window=DEFAULT_WINDOW, model_name=DEFAULT_MODEL):
         """
