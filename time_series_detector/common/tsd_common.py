@@ -31,7 +31,7 @@ def split_time_series(time_series, window=DEFAULT_WINDOW):
     """
     Spilt the time_series into five parts. Each has a length of window + 1
 
-    :param time_series: [data_c, data_b, data_a]
+    :param time_series: [data_c, data_b, data_a], 从原始时序 截断的时序，表示上周，昨天，今天
     :param window: the length of window
     :return: spilt list [[data_c_left], [data_c_right], [data_b_left], [data_b_right], [data_a]]
     """
@@ -53,6 +53,8 @@ def split_time_series(time_series, window=DEFAULT_WINDOW):
 def normalize_time_series(split_time_series):
     """
     Normalize the split_time_series.
+
+    用5段时序中今天的时序去对历史数据做scale
 
     :param split_time_series: [[data_c_left], [data_c_right], [data_b_left], [data_b_right], [data_a]]
     :return: all list / mean(split_time_series)

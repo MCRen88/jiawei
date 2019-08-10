@@ -45,7 +45,7 @@ class Gbdt(object):
         self.max_depth = max_depth
         self.learning_rate = learning_rate
 
-    def __calculate_features(self, data, window=DEFAULT_WINDOW):
+    def __calculate_features0(self, data, window=DEFAULT_WINDOW):
         """
         Caculate time features.
 
@@ -53,6 +53,23 @@ class Gbdt(object):
         :param window: the length of window
         """
         features = []
+        for index in data:
+            if is_standard_time_series(index["data"], window):
+                temp = []
+                temp.append(feature_service.extract_features(index["data"], window))
+                temp.append(index["flag"])
+                features.append(temp)
+        return features
+
+    def __calculate_features0(self, data, window=DEFAULT_WINDOW):
+        """
+        Caculate time features.
+
+        :param data: the time series to detect ,csv
+        :param window: the length of window
+        """
+        features = []
+        
         for index in data:
             if is_standard_time_series(index["data"], window):
                 temp = []

@@ -86,13 +86,13 @@ normalized_split_value = tsd_common.normalize_time_series(split_ts)
 # # print(index)
 # print("features")
 
+# 逐点提取特征
 
-
-
+aa = feature_service.extract_features(test_data.value, 6)# 从value中提取的特征
 
 # 特征提取，并将提取的feature和对应的标签放入features中；
 features = []
-for index in test_data:
+for index in test_data.iterrows():
     temp = []
     temp.append(feature_service.extract_features(test_data.value, 6))  #从value中提取的特征
     temp.append(list(test_data.anomaly)) #从标签中提取对应的
