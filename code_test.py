@@ -36,20 +36,11 @@ from time_series_detector.algorithm.gbdt import *
 from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_series
 
 
-DEFAULT_WINDOW = 6
-
-# ! pip install --upgrade pip
-
-
-# import sklearn
-# sklearn.__version__
 
 #数据为realAWSCloudwatch/ec2_cpu_utilization_5f5533.csv的数据；
 #数据是从2.14.2.14-2.28间每隔5分钟的数据；
 #已经完成异常标记；1表示异常，0表示正常
-test_data = pd.read_csv('data/realAWSCloudwatch/ec2_cpu_utilization_5f5533.csv')
 # test_data = pd.read_csv('data/realAWSCloudwatch/ec2_cpu_utilization_53ea38.csv')
-
 # ts = pd.Series(test_data_data['timestamp'].values, index=test_data['value'])
 
 
@@ -62,8 +53,8 @@ test_data = pd.read_csv('data/realAWSCloudwatch/ec2_cpu_utilization_5f5533.csv')
 #标准化value值
 
 #split value值并将split的值标准化
-split_ts = split_time_series(list(test_data.value))
-normalized_split_value = tsd_common.normalize_time_series(split_ts)
+# split_ts = split_time_series(list(test_data.value))
+# normalized_split_value = tsd_common.normalize_time_series(split_ts)
 
 
 
@@ -86,30 +77,62 @@ normalized_split_value = tsd_common.normalize_time_series(split_ts)
 # # print(index)
 # print("features")
 
-# 逐点提取特征
 
-aa = feature_service.extract_features(test_data.value, 6)# 从value中提取的特征
+
+
+def calculate_features(data, window, with_label=True):
+    """
+    Caculate time features.
+
+    :param data: the time series to detect of
+    :param window: the length of window
+    """
+    features = []
+    sliding_arrays = sliding_window(data.value, window_len=window)
+    for ith, arr in enumerate(sliding_arrays):
+        tmp = feature_service.extract_features(arr, window)
+        features.append(tmp)
+    if with_label:
+        label = data.anomaly.values[window + 7 * DAY_PNT-1:]
+    else:
+        label = None
+    return [features, label]
+
+
+##########################test_by shihuan######################################
+if __name__ == "__main__":
+    window = 60
+    test_data = pd.read_csv('data/realAWSCloudwatch/ec2_cpu_utilization_5f5533.csv')
+    X_train, y_train = calculate_features(test_data, window)
+    X_train = np.array(X_train)
+    y_train = np.array(y_train)
+    clf = GradientBoostingClassifier(n_estimators=5)
+    clf.fit(X_train, y_train)
+    print clf.predict(X_train)
+
+
+
 
 # 特征提取，并将提取的feature和对应的标签放入features中；
-features = []
-for index in test_data.iterrows():
-    temp = []
-    temp.append(feature_service.extract_features(test_data.value, 6))  #从value中提取的特征
-    temp.append(list(test_data.anomaly)) #从标签中提取对应的
-    d = []
-    d.append(feature_service.extract_features(test_data.value, 6))  # 从value中提取的特征
-    d.append(index[2])  # 从标签中提取对应的
-    features.append(temp)
-print index
-print ("a")
-print("-----------")
+# features = []
+# for index in test_data.iterrows():
+#     temp = []
+#     temp.append(feature_service.extract_features(test_data.value, 6))  #从value中提取的特征
+#     temp.append(list(test_data.anomaly))#从标签中提取对应的
+#     d = []
+#     d.append(feature_service.extract_features(test_data.value, 6))  # 从value中提取的特征
+#     d.append(index[2])  # 从标签中提取对应的
+#     features.append(temp)
+# print index
+# print ("a")
+# print("-----------")
+#
+# print(temp)
+# print(d)
 
-print(temp)
-print(d)
-
-
-print("-----------")
-print (features)
+#
+# print("-----------")
+# print (features)
 #
 # temp = []
 # temp.append(feature_service.extract_features(test_data.value, 6))
@@ -122,9 +145,9 @@ print (features)
 
 
 
-print ("temp finished")
-
-print(test_data.head(3))
+# print ("temp finished")
+#
+# print(test_data.head(3))
 
 
 

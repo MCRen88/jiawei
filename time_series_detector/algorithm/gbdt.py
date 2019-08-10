@@ -10,16 +10,34 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 import os
 import pickle
-import numpy as np
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.externals import joblib
 from time_series_detector.feature import feature_service
 from time_series_detector.common.tsd_common import *
 from time_series_detector.common.tsd_errorcode import *
-
+from numpy import mean, absolute, median
+import numpy as np
+from math import floor
+import pandas as pd
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '../model/')
 DEFAULT_MODEL = MODEL_PATH + "gbdt_default_model"
+
+
+
+
+DAY_PNT = 144
+
+def sliding_window(value, window_len=10):
+    value_window = []
+    value = np.array(value)
+    for i in range(window_len+7 * DAY_PNT, len(value) + 1):
+        xs_c = value[i - window_len - 7 * DAY_PNT: i + window_len - 7 * DAY_PNT]
+        xs_b = value[i - window_len - 1 * DAY_PNT: i + window_len - 1 * DAY_PNT]
+        xs_a = value[i - window_len:i]
+        xs_tmp = list(xs_c) + list(xs_b) + list(xs_a)
+        value_window.append(xs_tmp)
+    return value_window
 
 
 class Gbdt(object):
@@ -45,7 +63,7 @@ class Gbdt(object):
         self.max_depth = max_depth
         self.learning_rate = learning_rate
 
-    def __calculate_features0(self, data, window=DEFAULT_WINDOW):
+    def __calculate_features(self, data, window=DEFAULT_WINDOW):
         """
         Caculate time features.
 
@@ -53,13 +71,16 @@ class Gbdt(object):
         :param window: the length of window
         """
         features = []
-        for index in data:
-            if is_standard_time_series(index["data"], window):
-                temp = []
-                temp.append(feature_service.extract_features(index["data"], window))
-                temp.append(index["flag"])
-                features.append(temp)
+        sliding_arrays = sliding_window(data.value, window_len=window)
+        y = data.anomaly[window+7*DAY_PNT:]
+        for ith, arr in enumerate(sliding_arrays):
+            # if is_standard_time_series(index["data"], window):
+            temp = []
+            temp.append(feature_service.extract_features(arr, window))
+            temp.append(y[ith])
+            features.append(temp)
         return features
+
 
     def __calculate_features0(self, data, window=DEFAULT_WINDOW):
         """
