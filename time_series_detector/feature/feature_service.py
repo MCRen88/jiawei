@@ -15,6 +15,8 @@ from time_series_detector.common import tsd_common
 
 
 def extract_features(time_series, window):
+    # type: (object, object) -> object
+    # type: (object, object) -> object
     """
     Extracts three types of features from the time series.
 
@@ -25,10 +27,10 @@ def extract_features(time_series, window):
     :return: the value of features
     :return type: list with float
     """
-    if not tsd_common.is_standard_time_series(time_series, window):
-        # add your report of this error here...
-
-        return []
+    # if not tsd_common.is_standard_time_series(time_series, window):
+    #     # add your report of this error here...
+    #
+    #     return []
 
     # spilt time_series
     split_time_series = tsd_common.split_time_series(time_series, window)
