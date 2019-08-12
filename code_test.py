@@ -134,8 +134,8 @@ if __name__ == "__main__":
 
 
 
-    # clf.fit(x_train, y_train)
-    # print clf.predict(x_train)
+    clf.fit(x_train, y_train)
+    anomaly_score = clf.predict_proba(x_train)[:, 1]
     #
     # print f1_score(y_train, clf.predict(x_train))
     # print f1_score(y_test, clf.predict(x_test))
@@ -144,7 +144,7 @@ if __name__ == "__main__":
 
     clf.fit(x_train, y_train)
     print clf.predict(x_train)
-    print  f1_score(y_train, clf.predict(x_train))
+    print f1_score(y_train, clf.predict(x_train))
 
 
 
