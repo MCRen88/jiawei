@@ -40,12 +40,13 @@ DEFAULT_MODEL = MODEL_PATH + "gbdt_default_model"
 #     return value_window
 
 
-DAY_PNT = 140
 
 def sliding_window(value, window_len=10):
     value_window = []
     value = np.array(value)
     # DAY_PNT = floor(len(value)/7)
+    DAY_PNT = 23
+
 
     for i in range(window_len + 7 * DAY_PNT, len(value) + 1):
         xs_c = value[i - window_len - 7 * DAY_PNT: i + window_len - 7 * DAY_PNT]

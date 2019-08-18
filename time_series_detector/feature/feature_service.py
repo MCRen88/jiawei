@@ -41,5 +41,7 @@ def extract_features(time_series, window):
     # f_features = fitting_features.get_fitting_features(normalized_split_time_series)
     # c_features = classification_features.get_classification_features(max_min_normalized_time_series)
     # combine features with types
-    # features = s_features + f_features + c_features
-    return s_features
+    features = s_features
+    return features
+
+    # return features
