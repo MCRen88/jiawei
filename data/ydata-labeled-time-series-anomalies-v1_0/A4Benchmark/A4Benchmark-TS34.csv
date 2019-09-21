@@ -1,4 +1,4 @@
-timestamp,value,anomaly,changepoint,trend,noise,seasonality1,seasonality2,seasonality3
+timestamps,value,anomaly,changepoint,trend,noise,seasonality1,seasonality2,seasonality3
 1416722400,-10.73396504,0,0,0,-10.73396504,0,0,0
 1416726000,65.43623544,0,0,0,3.963116731,48.05,12.29390464,1.129214067
 1416729600,132.1809991,0,0,0,22.94910901,83.2250413,23.75,2.256848826

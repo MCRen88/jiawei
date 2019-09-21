@@ -41,20 +41,20 @@ DEFAULT_MODEL = MODEL_PATH + "gbdt_default_model"
 
 
 
-def sliding_window(value, window_len=10):
-    value_window = []
-    value = np.array(value)
-    # DAY_PNT = floor(len(value)/7)
-    DAY_PNT = 23
-
-
-    for i in range(window_len + 7 * DAY_PNT, len(value) + 1):
-        xs_c = value[i - window_len - 7 * DAY_PNT: i + window_len - 7 * DAY_PNT]
-        xs_b = value[i - window_len - 1 * DAY_PNT: i + window_len - 1 * DAY_PNT]
-        xs_a = value[i - window_len:i]
-        xs_tmp = list(xs_c) + list(xs_b) + list(xs_a)
-        value_window.append(xs_tmp)
-    return value_window
+# def sliding_window(value, window_len):
+#     value_window = []
+#     value = np.array(value)
+#     # DAY_PNT = floor(len(value)/7)
+#     # DAY_PNT = 24
+#     # DAY_PNT = len(total_dataset.loc[total_dataset['Date'] == total_dataset['Date'].ix[len(total_dataset)/2]])
+#     for i in range(window_len + 7 * DAY_PNT, len(value) + 1):
+#         xs_c = value[i - window_len - 7 * DAY_PNT: i + window_len - 7 * DAY_PNT]
+#         xs_b = value[i - window_len - 1 * DAY_PNT: i + window_len - 1 * DAY_PNT]
+#         xs_a = value[i - window_len:i]
+#         xs_tmp = list(xs_c) + list(xs_b) + list(xs_a)
+#         value_window.append(xs_tmp)
+#
+#     return value_window
 
 
 

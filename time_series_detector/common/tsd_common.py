@@ -17,7 +17,6 @@ def is_standard_time_series(time_series, window=DEFAULT_WINDOW):
     """
     Check the length of time_series. If window = 180, then the length of time_series should be 903.
     The mean value of last window should be larger than 0.
-
     :param time_series: the time series to check, like [data_c, data_b, data_a]
     :type time_series: pandas.Series
     :param window: the length of window
@@ -30,16 +29,21 @@ def is_standard_time_series(time_series, window=DEFAULT_WINDOW):
 def split_time_series(time_series, window=DEFAULT_WINDOW):
     """
     Spilt the time_series into five parts. Each has a length of window + 1
-
     :param time_series: [data_c, data_b, data_a], 从原始时序 截断的时序，表示上周，昨天，今天
     :param window: the length of window
     :return: spilt list [[data_c_left], [data_c_right], [data_b_left], [data_b_right], [data_a]]
     """
-    data_c_left = time_series[0:(window + 1)]
-    data_c_right = time_series[window:(2 * window + 1)]
-    data_b_left = time_series[(2 * window + 1):(3 * window + 2)]
-    data_b_right = time_series[(3 * window + 1):(4 * window + 2)]
-    data_a = time_series[(4 * window + 2):]
+    # data_c_left = time_series[0:(window + 1)]
+    # data_c_right = time_series[window:(2 * window + 1)]
+    # data_b_left = time_series[(2 * window + 1):(3 * window + 2)]
+    # data_b_right = time_series[(3 * window + 1):(4 * window + 2)]
+    # data_a = time_series[(4 * window + 2):]
+    data_c_left = time_series[0:(window)]
+    data_c_right = time_series[window:(2 * window)]
+    data_b_left = time_series[(2 * window):(3 * window )]
+    data_b_right = time_series[(3 * window):(4 * window)]
+    data_a = time_series[(4 * window):]
+
     split_time_series = [
         data_c_left,
         data_c_right,
@@ -50,12 +54,31 @@ def split_time_series(time_series, window=DEFAULT_WINDOW):
     return split_time_series
 
 
+def split_time_series2(time_series, window=DEFAULT_WINDOW):
+
+    # data_c_left = time_series[0:(window + 1)]
+    # data_c_right = time_series[window:(2 * window + 1)]
+    # data_b_left = time_series[(2 * window + 1):(3 * window + 2)]
+    # data_b_right = time_series[(3 * window + 1):(4 * window + 2)]
+    # data_a = time_series[(4 * window + 2):]
+    data_c_left = time_series[0:(window)]
+    data_c_right = time_series[window:2 * window]
+    data_b_left = time_series[(2 * window +1):(3 * window +1)]
+    data_b_right = time_series[(3 * window+1):(4 * window +1)]
+    data_a = time_series[(4 * window +2):5 * window +2]
+    split_time_series = [
+        data_c_left,
+        data_c_right,
+        data_b_left,
+        data_b_right,
+        data_a
+    ]
+    return split_time_series
+
 def normalize_time_series(split_time_series):
     """
     Normalize the split_time_series.
-
     用5段时序中今天的时序去对历史数据做scale
-
     :param split_time_series: [[data_c_left], [data_c_right], [data_b_left], [data_b_right], [data_a]]
     :return: all list / mean(split_time_series)
     """
@@ -85,7 +108,6 @@ def normalize_time_series(split_time_series):
 def normalize_time_series_by_max_min(split_time_series):
     """
     Normalize the split_time_series by max_min_normalization.
-
     :param split_time_series: [[data_c_left], [data_c_right], [data_b_left], [data_b_right], [data_a]]
     :return: max_min_normalized time_series
     """

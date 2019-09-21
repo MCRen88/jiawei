@@ -56,6 +56,15 @@ def time_series_coefficient_of_variation(x):
     return np.mean(x) / np.sqrt(np.var(x))
 
 
+def time_series_binned_entropy_get_dict(x):
+    def _f():
+        max_bins = [2, 4, 6, 8, 10, 20]
+        for value in max_bins:
+            temp__ = ts_feature_calculators.binned_entropy(x, value)
+            name = ("time_series_binned_entropy_max_bins_{}".format(value))
+            yield {'{}'.format(name):temp__}
+    return list(_f())
+
 def time_series_binned_entropy(x):
     """
     First bins the values of x into max_bins equidistant bins.
@@ -74,11 +83,24 @@ def time_series_binned_entropy(x):
     :return: the value of this feature
     :return type: float
     """
-    max_bins = [2, 4, 6, 8, 10, 20]
-    result = []
-    for value in max_bins:
-        result.append(ts_feature_calculators.binned_entropy(x, value))
-    return result
+    # max_bins = [2, 4, 6, 8, 10, 20]
+    # result = []
+    # for value in max_bins:
+    #     result.append(ts_feature_calculators.binned_entropy(x, value))
+    # return result
+    a = time_series_binned_entropy_get_dict(x)
+    return a
+
+
+def time_series_value_distribution_get_dict(x):
+    def _f():
+        thresholds = [0, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99, 1.0, 1.0]
+        bins=thresholds
+        temp__ = list(np.histogram(x, bins=thresholds)[0] / float(len(x)))
+        name = ("time_series_value_distribution_{}".format(bins))
+        yield {'{}'.format(name):temp__}
+    return list(_f())
+
 
 
 def time_series_value_distribution(x):
@@ -92,7 +114,10 @@ def time_series_value_distribution(x):
     :return type: list
     """
     thresholds = [0, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99, 1.0, 1.0]
+    a = list(np.histogram(x, bins=thresholds)[0] / float(len(x)))
     return list(np.histogram(x, bins=thresholds)[0] / float(len(x)))
+
+
 
 
 def time_series_daily_parts_value_distribution(x):
@@ -145,20 +170,48 @@ def time_series_daily_parts_value_distribution_with_threshold(x):
     nparray_threshold_count = (nparray_data_c_threshold == -1).sum() + (nparray_data_b_threshold == -1).sum() + (nparray_data_a_threshold == -1).sum()
 
     if nparray_threshold_count == 0:
-        features = [0, 0, 0]
+        features = [{"number_of_elements_less_than_threshould_lastweek":0}, {"number_of_elements_less_than_threshould_yesterday":0}, {"number_of_elements_less_than_threshould_today",0}]
     else:
         features = [
-            (nparray_data_c_threshold == -1).sum() / float(nparray_threshold_count),
-            (nparray_data_b_threshold == -1).sum() / float(nparray_threshold_count),
-            (nparray_data_a_threshold == -1).sum() / float(nparray_threshold_count)
+            {"number_of_elements_less_than_threshould_lastweek_take_up_total_threshould_number":(nparray_data_c_threshold == -1).sum() / float(nparray_threshold_count)},
+            {"number_of_elements_less_than_threshould_yesterday_take_up_total_threshould_number":(nparray_data_b_threshold == -1).sum() / float(nparray_threshold_count)},
+            {"number_of_elements_less_than_threshould_today_take_up_total_threshould_number":(nparray_data_a_threshold == -1).sum() / float(nparray_threshold_count)}
         ]
 
     features.extend([
-                    (nparray_data_c_threshold == -1).sum() / float(len(data_c)),
-                    (nparray_data_b_threshold == -1).sum() / float(len(data_b)),
-                    (nparray_data_a_threshold == -1).sum() / float(len(data_a))
+                   {"number_of_elements_less_than_threshould_lastweek_take_up_total_lastweek_number":(nparray_data_c_threshold == -1).sum() / float(len(data_c))},
+                    {"number_of_elements_less_than_threshould_lastweek_take_up_total_yesterday_number":(nparray_data_b_threshold == -1).sum() / float(len(data_b))},
+                    {"number_of_elements_less_than_threshould_lastweek_take_up_total_today_number":(nparray_data_a_threshold == -1).sum() / float(len(data_a))}
                     ])
     return features
+
+
+
+
+
+def time_series_window_parts_value_distribution_with_threshold_get_dict(x):
+    def _f():
+        threshold = 0.01
+        split_value_list = split_time_series(x, DEFAULT_WINDOW)
+
+        count_list = []
+        a = 0
+        for value_list in split_value_list:
+            nparray_threshold = np.array(value_list)
+            nparray_threshold[nparray_threshold < threshold] = -1
+            temp = (nparray_threshold == -1).sum()
+            count_list.append((nparray_threshold == -1).sum())
+            name = ("time_series_window_parts_value_distribution_with_threshold_{}".format(a))
+            a =a+1
+            if sum(count_list) == 0:
+                features = [0, 0, 0, 0, 0]
+            else:
+                features = temp/float((DEFAULT_WINDOW + 1))
+                    # list(np.array(count_list) / float((DEFAULT_WINDOW + 1)))
+            yield {'{}'.format(name):features}
+    return list(_f())
+
+
 
 
 def time_series_window_parts_value_distribution_with_threshold(x):
@@ -172,37 +225,43 @@ def time_series_window_parts_value_distribution_with_threshold(x):
     :return: 5 values of this feature
     :return type: list
     """
-    threshold = 0.01
-    split_value_list = split_time_series(x, DEFAULT_WINDOW)
+    # threshold = 0.01
+    # split_value_list = split_time_series(x, DEFAULT_WINDOW)
+    #
+    # count_list = []
+    # for value_list in split_value_list:
+    #     nparray_threshold = np.array(value_list)
+    #     nparray_threshold[nparray_threshold < threshold] = -1
+    #     count_list.append((nparray_threshold == -1).sum())
+    #
+    # if sum(count_list) == 0:
+    #     features = [0, 0, 0, 0, 0]
+    # else:
+    #     features = list(np.array(count_list) / float((DEFAULT_WINDOW + 1)))
+    #
+    # return features
 
-    count_list = []
-    for value_list in split_value_list:
-        nparray_threshold = np.array(value_list)
-        nparray_threshold[nparray_threshold < threshold] = -1
-        count_list.append((nparray_threshold == -1).sum())
-
-    if sum(count_list) == 0:
-        features = [0, 0, 0, 0, 0]
-    else:
-        features = list(np.array(count_list) / float((DEFAULT_WINDOW + 1)))
-
-    return features
+    a = time_series_window_parts_value_distribution_with_threshold_get_dict(x)
+    return a
 
 
 # add yourself classification features here...
 
 
 def get_classification_features(x):
-    classification_features = [
-        time_series_mean(x),
-        time_series_variance(x),
-        time_series_standard_deviation(x),
-        time_series_median(x),
-        time_series_autocorrelation(x),
-        time_series_coefficient_of_variation(x)
+    classification_features =[
+        {"time_series_mean_classification":time_series_mean(x)},
+        {"time_series_variance_classification":time_series_variance(x)},
+        {"time_series_standard_deviation_classification":time_series_standard_deviation(x)},
+        {"time_series_median_classification":time_series_median(x)},
+        {"time_series_autocorrelation_classification":time_series_autocorrelation(x)},
+        {"time_series_coefficient_of_variation_classification":time_series_coefficient_of_variation(x)},
     ]
     classification_features.extend(time_series_value_distribution(x))
     classification_features.extend(time_series_daily_parts_value_distribution(x))
+
+
+
     classification_features.extend(time_series_daily_parts_value_distribution_with_threshold(x))
     classification_features.extend(time_series_window_parts_value_distribution_with_threshold(x))
     classification_features.extend(time_series_binned_entropy(x))
