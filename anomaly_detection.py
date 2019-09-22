@@ -694,16 +694,11 @@ if __name__ == "__main__":
             # plt.stem(stattools.acf(total_dataset.value))
             # plt.stem(stattools.pacf(total_dataset.value))
             # plt.show()
-            adf_test = unitroot_adf(total_dataset.value)
-            kpss_test = kpss(total_dataset.value)
+
             # # by values
             adf_test_value, adf_critical_value = adf_(total_dataset.value)
             kpss_test_value, kpss_critical_value = kpss_(total_dataset.value)
 
-            #
-            # a = pd.DataFrame(a)
-
-            #
             if adf_test_value > adf_critical_value and kpss_test_value > kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
                 print '原始序列绝对不平稳'
                 total_dataset["value_diff"] = total_dataset["value"] - total_dataset["value"].shift(1)
