@@ -610,8 +610,8 @@ if __name__ == "__main__":
         DAY_PNT = len(total_dataset.loc[total_dataset['Date'] == total_dataset['Date'].ix[len(total_dataset)/2]])
 
         lenth_total_dataset = len(total_dataset)
-        lenth_new_dataset = len(total_dataset.ix[win_sli-1:]) #真正有特征值部分的数据集
         win_sli = window + 7 * DAY_PNT
+        lenth_new_dataset = len(total_dataset.ix[win_sli-1:]) #真正有特征值部分的数据集
         training_data, test_data = train_test_split(total_dataset.ix[win_sli-1:], test_size = 0.3, shuffle=False)
         train_ = total_dataset.ix[win_sli-1:int(lenth_new_dataset*0.7)+win_sli-1]
         test_ = total_dataset.ix[int(lenth_new_dataset*0.7)+win_sli-1:]
