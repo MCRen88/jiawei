@@ -35,6 +35,11 @@ from time_series_detector.algorithm.gbdt import *
 import time_series_detector.algorithm.gbdt
 # from sklearn.cross_validation import train_test_split
 import json, ast
+from statsmodels.stats.diagnostic import unitroot_adf
+# import tushare as ts
+from statsmodels.tsa import stattools
+from statsmodels.tsa.stattools import kpss
+from statsmodels.stats.diagnostic import acorr_ljungbox
 
 
 def sliding_window(value, window_len):
@@ -338,8 +343,8 @@ def day_based_changed_proba_predict(target_date1,target_date2, target_date3):
     plt.xticks(rotation=30)
     ax.set_xlabel("Time (h)")
     ax.set_ylabel("Value changed")
-    ax2.set_ylabel("Probability Anomaly Score")
-    ax2.set_ylim(0, 1)
+    # ax2.set_ylabel("Probability Anomaly Score")
+    # ax2.set_ylim(0, 1)
     plt.xticks(rotation = 30)
     plt.title('{} Day-based Comparison (with yesterday and last week)'.format(target_date1))
 
@@ -566,6 +571,77 @@ def circulation_file_predict_origin_features_select_methods(total_dataset):
 
 
 
+##平稳性测试
+def adf_(timeseries): # adf_ 检验平稳性
+    adf_test = unitroot_adf(timeseries)
+    adf_test_value = adf_test[0]
+    adfuller_value = pd.DataFrame({key:value for key,value in adf_test[4].items()},index = [0])
+    adfuller_value = pd.DataFrame(adfuller_value)
+    adfuller_critical_value = adfuller_value['10%'][0]
+    return adf_test_value, adfuller_critical_value
+
+
+def kpss_(timeseries): #kpss检验平稳性
+    kpss_test = kpss(timeseries)
+    kpss_test_value = kpss_test[0]
+    kpss_value = pd.DataFrame({key:value for key,value in kpss_test[3].items()},index = [0])
+    kpss_value = pd.DataFrame(kpss_value)
+    kpss_critical_value = kpss_value['10%'][0]
+    return kpss_test_value, kpss_critical_value
+
+def acorr_ljungbox_(timeseries):
+    a = acorr_ljungbox(timeseries, lags=1)
+    return a[1][0] ### return 检验结果的 p_value值
+
+
+# def smooth_and_nonrandom_test(dataset):
+#
+#     adf_test_value, adf_critical_value = adf_(dataset.value)
+#     kpss_test_value, kpss_critical_value = kpss_(dataset.value)
+#     #
+#     if adf_test_value > adf_critical_value and kpss_test_value > kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
+#         print '原始序列绝对不平稳'
+#         dataset["value_diff"] = dataset["value"] - dataset["value"].shift(1)
+#         ######
+#         dataset = dataset.ix[1:].reset_index()
+#
+#         adf_test_value2, adf_critical_value2 = adf_(dataset.value_diff)
+#         kpss_test_value2, kpss_critical_value2 = kpss_(dataset.value_diff)
+#         if adf_test_value2 < adf_critical_value2 and kpss_test_value2 < kpss_critical_value2:
+#             print '一阶差分后平稳'
+#             a = acorr_ljungbox_(dataset.value_diff)
+#             if a < 0.05:
+#                 dataset.value = dataset.value_diff ###由于差分之后时间序列平稳，用差分后的值代替value进行分析；
+#                 list_r = circulation_file_predict_origin_features_select_methods(dataset)
+#
+#     ######需要一个能够自动判断不平稳数据后经过在多次处理后 再循环判断，一直到数据平稳的过程
+#
+#
+#
+#
+#
+#     # if adf_test_value > adf_critical_value and kpss_test_value < kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
+#     #     print '趋势平稳--去除趋势后序列严格平稳'
+#     #
+#     # if adf_test_value < adf_critical_value and kpss_test_value > kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
+#     #     print '差分平稳，利用差分可使序列平稳'
+#     #     dataset["value_diff"] = dataset["value"] - dataset["value"].shift(1)
+#     #     adf_test2 =  unitroot_adf(dataset.value_diff)
+#     #     # adfuller_value2= pd.DataFrame({key:value for key,value in adf_test[4].items()},index = [0])
+#     #     # adfuller_value = pd.DataFrame(adfuller_value)
+#     #     print adf_test2
+#     #
+#     # elif adf_test_value < adf_critical_value and kpss_test_value < kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
+#     #     print '绝对平稳'
+#     #     list_r = circulation_file_predict_origin_features_select_methods(dataset)
+#     #     list_to_print.append(list_r)
+#     # print kpss(dataset.value)
+#
+#
+#
+
+
+
 
 
 
@@ -574,6 +650,8 @@ def circulation_file_predict_origin_features_select_methods(total_dataset):
 ##########################################--- main ----#####################################################################
 ##########################################--- main ----#####################################################################
 if __name__ == "__main__":
+
+
     global x_features_selected
 
     warnings.filterwarnings("ignore")
@@ -583,6 +661,7 @@ if __name__ == "__main__":
     k = pd.DataFrame(k)
     list_to_print = []
     for i in range(0,len(k)):
+        i =3
         location = k["location"].ix[i]
         filename = k["filename"].ix[i]
         total_dataset = pd.read_csv('{}'.format(location))
@@ -610,14 +689,73 @@ if __name__ == "__main__":
         DAY_PNT = len(total_dataset.loc[total_dataset['Date'] == total_dataset['Date'].ix[len(total_dataset)/2]])
 
         lenth_total_dataset = len(total_dataset)
-        lenth_new_dataset = len(total_dataset.ix[win_sli-1:]) #真正有特征值部分的数据集
         win_sli = window + 7 * DAY_PNT
-        training_data, test_data = train_test_split(total_dataset.ix[win_sli-1:], test_size = 0.3, shuffle=False)
+        lenth_new_dataset = len(total_dataset.ix[win_sli-1:]) #真正有特征值部分的数据集
 
+        training_data, test_data = train_test_split(total_dataset.ix[win_sli-1:], test_size = 0.3, shuffle=False)
         train_ = total_dataset.ix[win_sli-1:int(lenth_new_dataset*0.7)+win_sli-1]
         test_ = total_dataset.ix[int(lenth_new_dataset*0.7)+win_sli-1:]
 
+
+
+        #
         if win_sli < int(len(total_dataset)*0.3) and len(test_.loc[test_['anomaly'] == 1]) > 0 and len(train_.loc[train_['anomaly'] == 1]) > 0: ####（要加入判断时间序列的分析有没有价值的判断方法）
-            list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
-            list_to_print.append(list_r)
-            break
+            anomaly_view(total_dataset)#观察异常点和整体时序走向 （未进行数据平稳处理前）
+            #判断序列的平稳性
+            #by pics
+            # plt.stem(stattools.acf(total_dataset.value))
+            # plt.stem(stattools.pacf(total_dataset.value))
+            # plt.show()
+            adf_test = unitroot_adf(total_dataset.value)
+            kpss_test = kpss(total_dataset.value)
+            # # by values
+            adf_test_value, adf_critical_value = adf_(total_dataset.value)
+            kpss_test_value, kpss_critical_value = kpss_(total_dataset.value)
+
+            #
+            # a = pd.DataFrame(a)
+
+            #
+            if adf_test_value > adf_critical_value and kpss_test_value > kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
+                print '原始序列绝对不平稳'
+                total_dataset["value_diff"] = total_dataset["value"] - total_dataset["value"].shift(1)
+                ######
+                total_dataset = total_dataset.ix[1:].reset_index()
+                adf_test_value2, adf_critical_value2 = adf_(total_dataset.value_diff)
+                kpss_test_value2, kpss_critical_value2 = kpss_(total_dataset.value_diff)
+                if adf_test_value2 < adf_critical_value2 and kpss_test_value2 < kpss_critical_value2:
+                    print '一阶差分后平稳'
+                    a = acorr_ljungbox_(total_dataset.value_diff)
+                    if a < 0.05:
+                        total_dataset.value = total_dataset.value_diff ###由于差分之后时间序列平稳，用差分后的值代替value进行分析；
+                        list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
+                    else: break
+
+            ######补充一个能够自动判断不平稳数据后经过在多次处理后 再循环判断，一直到数据平稳的过程
+
+
+
+
+
+            # if adf_test_value > adf_critical_value and kpss_test_value < kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
+            #     print '趋势平稳--去除趋势后序列严格平稳'
+            #
+            # if adf_test_value < adf_critical_value and kpss_test_value > kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
+            #     print '差分平稳，利用差分可使序列平稳'
+            #     total_dataset["value_diff"] = total_dataset["value"] - total_dataset["value"].shift(1)
+            #     adf_test2 =  unitroot_adf(total_dataset.value_diff)
+            #     # adfuller_value2= pd.DataFrame({key:value for key,value in adf_test[4].items()},index = [0])
+            #     # adfuller_value = pd.DataFrame(adfuller_value)
+            #     print adf_test2
+            #
+            elif adf_test_value < adf_critical_value and kpss_test_value < kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
+                print '绝对平稳'
+                a = acorr_ljungbox_(total_dataset.value_diff)
+                if a < 0.05:
+                    list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
+                else: break
+
+
+            break ##只跑一个数据集
+
+
