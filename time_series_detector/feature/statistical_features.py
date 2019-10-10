@@ -10,7 +10,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
 from __future__ import absolute_import, division
 
 import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators
-import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators_without_param
+# import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators_without_param
 import time_series_detector.feature.feature_calculators_withparam as ts_feature_calculators_without_param
 import warnings
 import pandas as pd
@@ -435,7 +435,7 @@ def _do_extraction_on_chunk(x, default_fc_parameters = None):
             else:
                 # a = pd.DataFrame(data)
                 a = data
-                a2 = pd.DataFrame(data)
+                # a = pd.DataFrame(data)
                 # b = a.values
                 # b =a
             if func.fctype == "combiner":
@@ -456,9 +456,6 @@ def _do_extraction_on_chunk(x, default_fc_parameters = None):
                 yield {"{}".format(feature_name):item}
 
                 # yield {feature_name:item}
-
-
-
 
     return list(_f())
     # return k_format_changed
