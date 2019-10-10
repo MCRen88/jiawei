@@ -1,45 +1,53 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import numpy as np
 import csv
-import pandas as pd
 import re
 # import matplotlib.pylab as plt
-import matplotlib.pyplot as plt
+
 # from inspect import signature
 import datetime
 import warnings
-from sklearn.metrics import classification_report,confusion_matrix,f1_score,average_precision_score
-# import pywt #导入PyWavelets
 import time
+import json, ast
+from datetime import timedelta
+import json, ast
+
+# import pywt #导入PyWavelets
+
 # import feature
 # import feature.extraction
-import matplotlib.pylab as plt
-import json, ast
-import datetime
-from datetime import timedelta
+import pandas as pd
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+from sklearn.metrics import classification_report,confusion_matrix,f1_score,average_precision_score
 from sklearn import datasets, svm
 from sklearn.feature_selection import chi2,mutual_info_classif
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import VarianceThreshold,SelectFromModel
-from tsfresh.feature_extraction.settings import ComprehensiveFCParameters
-# from imblearn.over_sampling import SMOTE #数据不均衡
 from sklearn.metrics import precision_recall_curve
-# from scikitplot.classifiers import plot_precision_recall_curve
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import SelectPercentile, f_classif
-# from time_series_detector.feature.extraction import *
-from time_series_detector.algorithm.gbdt import *
-import time_series_detector.algorithm.gbdt
-# from sklearn.cross_validation import train_test_split
-import json, ast
+
 from statsmodels.stats.diagnostic import unitroot_adf
 # import tushare as ts
 from statsmodels.tsa import stattools
 from statsmodels.tsa.stattools import kpss
 from statsmodels.stats.diagnostic import acorr_ljungbox
+
+from tsfresh.feature_extraction.settings import ComprehensiveFCParameters
+# from imblearn.over_sampling import SMOTE #数据不均衡
+# from scikitplot.classifiers import plot_precision_recall_curve
+
+# from time_series_detector.feature.extraction import *
+from time_series_detector.algorithm.gbdt import *
+import time_series_detector.algorithm.gbdt
+# from sklearn.cross_validation import train_test_split
+
 
 
 def sliding_window(value, window_len):
