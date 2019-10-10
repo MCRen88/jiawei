@@ -5,8 +5,13 @@ import numpy as np
 import csv
 import pandas as pd
 import re
+from tsfresh.examples import load_robot_execution_failures
+from tsfresh import extract_features
+from tsfresh import extract_relevant_features
 # import matplotlib.pylab as plt
 import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, auc  ###计算roc和auc
+
 # from inspect import signature
 import datetime
 import warnings
@@ -16,6 +21,10 @@ import time
 # import feature
 # import feature.extraction
 import matplotlib.pylab as plt
+from statsmodels.stats.diagnostic import unitroot_adf
+from statsmodels.tsa import stattools
+from statsmodels.tsa.stattools import kpss
+from statsmodels.stats.diagnostic import acorr_ljungbox
 import json, ast
 import datetime
 from datetime import timedelta
@@ -35,11 +44,6 @@ from time_series_detector.algorithm.gbdt import *
 import time_series_detector.algorithm.gbdt
 # from sklearn.cross_validation import train_test_split
 import json, ast
-from statsmodels.stats.diagnostic import unitroot_adf
-# import tushare as ts
-from statsmodels.tsa import stattools
-from statsmodels.tsa.stattools import kpss
-from statsmodels.stats.diagnostic import acorr_ljungbox
 
 
 def sliding_window(value, window_len):
@@ -49,10 +53,11 @@ def sliding_window(value, window_len):
     # DAY_PNT = 24
     # DAY_PNT = len(total_dataset.loc[total_dataset['Date'] == total_dataset['Date'].ix[len(total_dataset)/2]])
     for i in range(window_len + 7 * DAY_PNT, len(value) + 1):
-        xs_c = value[i - window_len - 7 * DAY_PNT: i + window_len - 7 * DAY_PNT]
+        # xs_c = value[i - window_len - 7 * DAY_PNT: i + window_len - 7 * DAY_PNT]
         xs_b = value[i - window_len - 1 * DAY_PNT: i + window_len - 1 * DAY_PNT]
         xs_a = value[i - window_len:i]
-        xs_tmp = list(xs_c) + list(xs_b) + list(xs_a)
+        # xs_tmp = list(xs_c) + list(xs_b) + list(xs_a)
+        xs_tmp = list(xs_b) + list(xs_a)
         value_window.append(xs_tmp)
 
     return value_window
@@ -81,7 +86,7 @@ def calculate_features_with_param(data, window):
         y = pd.DataFrame(t)
         k_format_changed = pd.concat([k_format_changed, y], axis=1)
     # # x_train format
-    k_format_changed = k_format_changed.astype('float64')
+    # k_format_changed = k_format_changed.astype('float64')
     k_format_changed = k_format_changed.fillna(0)
     k_format_changed = k_format_changed.ix[:, ~((k_format_changed==0).all())] ##delete the columns that is all 0 values
     k_format_changed = k_format_changed.ix[:, ~((k_format_changed==1).all())] ##delete the columns that is all 1 values
@@ -150,6 +155,7 @@ def combine_features_calculate (data, window):#####汇合了metis和tsfresh
         y = pd.DataFrame(t)
         k_format_changed = pd.concat([k_format_changed, y], axis=1)
     # # x_train format
+    label = data.anomaly[window + 7 * DAY_PNT-1:]
     k_format_changed = k_format_changed.astype('float64')
     k_format_changed = k_format_changed.fillna(0)
     k_format_changed = k_format_changed.ix[:, ~((k_format_changed==0).all())] ##delete the columns that is all 0 values
@@ -184,13 +190,21 @@ def Precision_Recall_Curve(training_data_anomaly, anomaly_score_train,test_data_
     precision_train, recall_train, threshold_train = precision_recall_curve(training_data_anomaly, anomaly_score_train)
     precision_test, recall_test, threshold_test = precision_recall_curve(test_data_anomaly, anomaly_score_test)
 
-    print(precision_train)
-    print(recall_train)
-    print(threshold_train)
-    # plt.plot(recall,precision)
-    plt.plot(recall_train,precision_train,label = 'train_precision_recall')
-    # plt.plot(recall_test,precision_test,label = 'test_precision_recall')
+    #
+    # plt.step(recall_train, precision_train, color='b', alpha=0.2,
+    #          where='post')
+    # plt.fill_between(recall_train, precision_train, step='post', alpha=0.2,
+    #                  color='b')
 
+
+
+
+    # fpr,tpr,threshold = roc_curve(y_test, y_score) ###计算真正率和假正率
+    # roc_auc = auc(fpr,tpr) ###计算auc的值
+
+
+    plt.plot(recall_train,precision_train,label = 'train_precision_recall')
+    plt.plot(recall_test,precision_test,label = 'test_precision_recall')
     plt.title('Precision/Recall Curve')# give plot a title
     plt.xlabel('Recall')
     plt.ylabel('Precision')
@@ -280,6 +294,7 @@ def plot_pr(auc_score, precision, recall, label=None):
 def millisec_to_str(sec):
     return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(sec)))
 
+
 def day_based_changed(target_date):
     total_dataset_Date_index = total_dataset
     total_dataset_Date_index = total_dataset_Date_index.set_index('Date')
@@ -290,19 +305,180 @@ def day_based_changed(target_date):
     plt.plot(line.Hour_Minute, line.value,  label=line_name,alpha = 0.4)
     if len(line.loc[line['anomaly']== 1])>0:
         line_anomaly = line.loc[line['anomaly']== 1]
-        plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = tatget_color, label='Line_{}'.format(target_date))
-    delta=datetime.timedelta(days=1)
-    # yesterday = pd.datetime(target_date) - delta
+        plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+', color = 'red',label='Line_{}'.format(target_date))
+    # delta=datetime.timedelta(days=1)
+
+
+    # time = '2019-06-10 22:45:00'
+    target_date2 = datetime.datetime.strptime(target_date,"%Y-%m-%d")
+    yesterday = target_date2 - datetime.timedelta(days = 1)
+    yesterday = yesterday.strftime("%Y-%m-%d")
     line_name2 = 'Line_{}'.format(yesterday)
     line = total_dataset_Date_index.loc[yesterday] ##12。24为基准
     plt.plot(line.Hour_Minute, line.value,label=yesterday,alpha = 0.4)
     if len(line.loc[line['anomaly']== 1])>0:
         line_anomaly = line.loc[line['anomaly']== 1]
-        plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'blue', label='Line_{}'.format(yesterday))
+        plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red', label='Line_{}'.format(yesterday))
 
     plt.title('{} Day-based Comparison (with yesterday and last week)'.format(target_date))
     plt.legend(bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0)
     plt.xticks(rotation=30)
+    plt.show()
+
+#
+# def two_day_based_changed(target_date):
+#     total_dataset_Date_index = total_dataset
+#     total_dataset_Date_index = total_dataset_Date_index.set_index('Date')
+#     total_dataset_Date_index.index = pd.DatetimeIndex(total_dataset_Date_index.index)
+#
+#     target_date2 = datetime.datetime.strptime(target_date,"%Y-%m-%d")
+#     yesterday = (target_date2 - datetime.timedelta(days = 1)).strftime("%Y-%m-%d")
+#     the_day_before_yesterday = (target_date2 - datetime.timedelta(days = 2)).strftime("%Y-%m-%d")
+#     last_week = (target_date2 - datetime.timedelta(days = 7)).strftime("%Y-%m-%d")
+#     last_week_of_yesterday = (target_date2 - datetime.timedelta(days = 8)).strftime("%Y-%m-%d")
+#
+#     line_name2 = 'Line_{}'.format(yesterday)
+#
+#     ##数据
+#     #数据
+#     line = total_dataset_Date_index.loc[target_date] ##12。24为基准
+#     # #昨天数据
+#     line = total_dataset_Date_index.loc[yesterday] ##12。24为基准
+#     #前天数据
+#     line = total_dataset_Date_index.loc[the_day_before_yesterday]
+#     #今天的上周数据
+#     line = total_dataset_Date_index.loc[last_week]
+#     #昨天的上周数据
+#     line = total_dataset_Date_index.loc[last_week_of_yesterday]
+#
+#     #最后两天的数据
+#     last_two_days = [total_dataset_Date_index.loc[target_date] , total_dataset_Date_index.loc[yesterday]]
+#     last_two_days = pd.DataFrame(last_two_days)
+#     print last_two_days
+#
+#     #the last 2 days
+#     last_two_days = []
+#     last_two_days = pd.DataFrame(last_two_days)
+#     last_two_days = last_two_days.append(total_dataset_Date_index.loc[target_date])
+#     last_two_days = last_two_days.append(total_dataset_Date_index.loc[yesterday])
+#     last_two_days = pd.DataFrame(last_two_days)
+#     last_two_days = last_two_days.sort_values(by=['timestamps'], ascending=True)
+#     plt.plot(last_two_days.timestamps, last_two_days.value,label='value changed of last two days',alpha = 0.4)
+#     if len(last_two_days.loc[last_two_days['anomaly']== 1])>0:
+#         last_two_days_anomaly = last_two_days.loc[last_two_days['anomaly']== 1]
+#         plt.scatter(np.array(last_two_days_anomaly.timestamps),last_two_days_anomaly.value, marker='+', color = 'red')
+#
+#     #the day before last 2 days
+#     the_day_last_two_days = []
+#     the_day_last_two_days = pd.DataFrame(the_day_last_two_days)
+#     the_day_last_two_days = the_day_last_two_days.append(total_dataset_Date_index.loc[yesterday])
+#     the_day_last_two_days = the_day_last_two_days.append(total_dataset_Date_index.loc[the_day_before_yesterday])
+#     the_day_last_two_days = pd.DataFrame(the_day_last_two_days)
+#     the_day_last_two_days = the_day_last_two_days.sort_values(by=['timestamps'], ascending=True)
+#     plt.plot(the_day_last_two_days.timestamps, the_day_last_two_days.value,label='value changed of day before last two days',alpha = 0.4)
+#     if len(the_day_last_two_days.loc[the_day_last_two_days['anomaly']== 1])>0:
+#         the_day_last_two_days_anomaly = the_day_last_two_days.loc[the_day_last_two_days['anomaly']== 1]
+#         plt.scatter(np.array(the_day_last_two_days_anomaly.timestamps),the_day_last_two_days_anomaly.value, marker='+', color = 'red')
+#
+#
+#
+#
+#     #
+#     #
+#     # line_name = 'Line_{}'.format(target_date)
+#     #
+#     # plt.plot(line.Hour_Minute, line.value,  label=line_name,alpha = 0.4)
+#     # if len(line.loc[line['anomaly']== 1])>0:
+#     #     line_anomaly = line.loc[line['anomaly']== 1]
+#     #     plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+', color = 'red',label='Line_{}'.format(target_date))
+#     # # delta=datetime.timedelta(days=1)
+#     #
+#     #
+#     # # time = '2019-06-10 22:45:00'
+#     #
+#     # line = total_dataset_Date_index.loc[yesterday] ##12。24为基准
+#     # plt.plot(line.Hour_Minute, line.value,label=yesterday,alpha = 0.4)
+#     # if len(line.loc[line['anomaly']== 1])>0:
+#     #     line_anomaly = line.loc[line['anomaly']== 1]
+#     #     plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red', label='Line_{}'.format(yesterday))
+#
+#     plt.title('{} Day-based Comparison (with yesterday and last week)'.format(target_date))
+#     plt.legend(bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0)
+#     plt.xticks(rotation=30)
+#     plt.show()
+
+def last_two_days_anomaly_view(target_date):
+    total_dataset_Date_index = total_dataset
+    total_dataset_Date_index = total_dataset_Date_index.set_index('Date')
+    total_dataset_Date_index.index = pd.DatetimeIndex(total_dataset_Date_index.index)
+
+    target_date2 = datetime.datetime.strptime(target_date,"%Y-%m-%d")
+    yesterday = (target_date2 - datetime.timedelta(days = 1)).strftime("%Y-%m-%d")
+    the_day_before_yesterday = (target_date2 - datetime.timedelta(days = 2)).strftime("%Y-%m-%d")
+    last_week = (target_date2 - datetime.timedelta(days = 7)).strftime("%Y-%m-%d")
+    last_week_of_yesterday = (target_date2 - datetime.timedelta(days = 8)).strftime("%Y-%m-%d")
+
+
+    #创建图形
+    plt.figure(1)
+    # plt.figure(figsize=(16, 12))
+    plt.subplot(211) ##based last day
+    line_name = 'Line_{}'.format(target_date)
+    line = total_dataset_Date_index.loc[target_date] ##12。24为基准
+    plt.plot(line.Hour_Minute, line.value,  label=line_name,alpha = 0.4)
+    if len(line.loc[line['anomaly']== 1])>0:
+        line_anomaly = line.loc[line['anomaly']== 1]
+        plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+', color = 'red')
+
+    line = total_dataset_Date_index.loc[yesterday] ##12。24为基准
+    line_name = 'Line_{}'.format(yesterday)
+    plt.plot(line.Hour_Minute, line.value,label=line_name,alpha = 0.4)
+    if len(line.loc[line['anomaly']== 1])>0:
+        line_anomaly = line.loc[line['anomaly']== 1]
+        plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red')
+    plt.title('{} Day-based Comparison (with yesterday and last week)'.format(target_date))
+    plt.legend(bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0)
+    plt.xticks(rotation=30)
+
+    line = total_dataset_Date_index.loc[last_week] ##12。24为基准
+    line_name = 'Line_{}'.format(last_week)
+    plt.plot(line.Hour_Minute, line.value,label=line_name,alpha = 0.4)
+    if len(line.loc[line['anomaly']== 1])>0:
+        line_anomaly = line.loc[line['anomaly']== 1]
+        plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red')
+    plt.title('{}(top) and {} (bottom) Day-based Comparison (with yesterday and last week)'.format(target_date,yesterday))
+    plt.legend(bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0)
+    plt.xticks(rotation=30)
+
+
+    plt.subplot(212)
+    line = total_dataset_Date_index.loc[target_date] ##12。24为基准
+    line_name = 'Line_{}'.format(yesterday)
+    plt.plot(line.Hour_Minute, line.value, label=line_name,alpha = 0.4)
+    if len(line.loc[line['anomaly']== 1])>0:
+        line_anomaly = line.loc[line['anomaly']== 1]
+        plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+', color = 'red')
+
+    line = total_dataset_Date_index.loc[the_day_before_yesterday] ##12。24为基准
+    line_name = 'Line_{}'.format(the_day_before_yesterday)
+    plt.plot(line.Hour_Minute, line.value,label=line_name,alpha = 0.4)
+    if len(line.loc[line['anomaly']== 1])>0:
+        line_anomaly = line.loc[line['anomaly']== 1]
+        plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red')
+
+    line = total_dataset_Date_index.loc[last_week_of_yesterday] ##12。24为基准
+    line_name = 'Line_{}'.format(last_week_of_yesterday)
+    plt.plot(line.Hour_Minute, line.value,label=line_name,alpha = 0.4)
+    if len(line.loc[line['anomaly']== 1])>0:
+        line_anomaly = line.loc[line['anomaly']== 1]
+        plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red')
+
+    # plt.title('{} Day-based Comparison (with yesterday and last week)'.format(yesterday))
+    plt.legend(bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0)
+    # plt.xticks(rotation=30)
+    plt.subplots_adjust(wspace=1.5, hspace=0)
+    plt.savefig('/Users/xumiaochun/python_workspace/southern_power_grid/data_view_based_on_id/last_two_days/{}.png'.format(a_name[i]),dpi = 2000,bbox_inches = 'tight')
+    # plt.savefig('test.png')
     plt.show()
 
 
@@ -348,8 +524,8 @@ def day_based_changed_proba_predict(target_date1,target_date2, target_date3):
     plt.xticks(rotation=30)
     ax.set_xlabel("Time (h)")
     ax.set_ylabel("Value changed")
-    # ax2.set_ylabel("Probability Anomaly Score")
-    # ax2.set_ylim(0, 1)
+    ax2.set_ylabel("Probability Anomaly Score")
+    ax2.set_ylim(0, 1)
     plt.xticks(rotation = 30)
     plt.title('{} Day-based Comparison (with yesterday and last week)'.format(target_date1))
 
@@ -473,11 +649,8 @@ def data_modeling_gbdt(x_selected,y):
      anomaly_score(not DF), represents the percentage to be anomaly.
     '''
 
-    clf = GradientBoostingClassifier()
+    clf = GradientBoostingClassifier(n_estimators=300, max_depth=10, min_samples_split=10, learning_rate=0.5)
     clf.fit(x_selected, y)
-    # for cnt, tree in enumerate(clf.estimators_):
-    #     plot_tree(clf=tree[0], title="example_tree_%d" % cnt)
-
     y_pred = clf.predict(x_selected)
     anomaly_score = clf.predict_proba(x_selected)[:, 1]
     # y_pred = pd.DataFrame(y_pred)
@@ -492,7 +665,10 @@ def anomaly_view(dataset):
     plt.scatter(pd.to_datetime(np.array(y_train_anomaly_dataset_selcted.timestamps)),y_train_anomaly_dataset_selcted.value, color='red',marker='+', label='Maxmin_value_anomaly')
     plt.legend(loc= 'best',fontsize= 5)
     plt.xticks(rotation=30)
-    plt.title('Value and Anomaly view')# give plot a title
+    plt.title('Value and Anomaly view ')# give plot a title
+    # plt.xticks(rotation=30)
+    plt.subplots_adjust(wspace=1.5, hspace=0)
+    plt.savefig('/Users/xumiaochun/python_workspace/southern_power_grid/data_view_based_on_id/whole_line/{}.png'.format(a_name[i]),dpi = 200,bbox_inches = 'tight')
     plt.show()
 
 def anomaly_predict_view(dataset):
@@ -526,8 +702,10 @@ def circulation_file_predict_origin_features_select_methods(total_dataset):
     ##先进行绘图：1、曲线和异常点的图；2、观察某个随机日期的数据（自行输入日期），得到前一天；上一周和本周的异常情况
     #1、曲线和异常点的图
 
+
     anomaly_view(total_dataset)#观察异常点和整体时序走向
-    day_based_changed_proba_predict('2015-01-07','2015-01-06','2014-12-31')
+
+    day_based_changed_proba_predict('2019-05-21','2019-05-20','2019-05-14')
 
 
 ##先进行特征计算
@@ -537,7 +715,7 @@ def circulation_file_predict_origin_features_select_methods(total_dataset):
     x_features_selected = features_selected_ExtraTreesClassifier(x_features_calculate, y_calculate)
 
     selected_features_name, x_features_selected = selected_columns_names(x_features_calculate, x_features_selected)
-    # print x_features_selected.columns.tolist()
+
 
     #在进行数据集 split；从win+7day开始--从win+7day开始的数据集
     new_dataset = total_dataset.iloc[win_sli-1:,:]
@@ -546,21 +724,12 @@ def circulation_file_predict_origin_features_select_methods(total_dataset):
     x_train_selected, x_test_selected = train_test_split(x_features_selected, test_size = 0.3, shuffle=False)
     y_train_selected,y_test_selected = train_test_split(y_calculate, test_size = 0.3, shuffle=False)
 
-
-
-
     # #在进行预测算法；
     y_pred_train, anomaly_score_train = data_modeling_gbdt(x_train_selected,training_data.anomaly)
     y_pred_test, anomaly_score_test = data_modeling_gbdt(x_test_selected,test_data.anomaly)
-
-    predict_report_train = classification_report (training_data.anomaly,y_pred_train, labels=[1, 2, 3])
-    predict_report_test = classification_report (test_data.anomaly,y_pred_test, labels=[1, 2, 3])
-
-    # print '\n\npredict_report_train\n\n',predict_report_train,'\n\npredict_report_test\n\n\n',predict_report_test
-
     # #结果根据时间窗添加到原始total——dataset中
-    print "\n\ntraining_data\n",training_data,"\n\ntest_data\n",test_data,"\n\n\nnew_dataset\n",new_dataset
-
+    new_dataset = total_dataset.iloc[win_sli-1:,:]
+    new_dataset = new_dataset.reset_index()
 
     anomaly_pred = []
     anomaly_pred.extend(y_pred_train)
@@ -579,7 +748,7 @@ def circulation_file_predict_origin_features_select_methods(total_dataset):
     anomaly_predict_view(new_dataset) ##compare the difference between anomaly_flag and anomaly_predict
     anomaly_score_view_predict(new_dataset) ##观察整条曲线的anomaly_score和anomaly——flag的情况
 
-    anomaly_score_view_date(new_dataset,'2015-01-07') ##观察某一天anomaly_score和anomaly——flag的情况
+    anomaly_score_view_date(new_dataset,'2019-05-17') ##观察某一天anomaly_score和anomaly——flag的情况
 
 # #对异常的预测情况的precision_recall的画图；
     Precision_Recall_Curve(training_data.anomaly, anomaly_score_train,test_data.anomaly, anomaly_score_test)
@@ -587,74 +756,6 @@ def circulation_file_predict_origin_features_select_methods(total_dataset):
     # #单独的precision和recall图
 
 
-##平稳性测试
-def adf_(timeseries): # adf_ 检验平稳性
-    adf_test = unitroot_adf(timeseries)
-    adf_test_value = adf_test[0]
-    adfuller_value = pd.DataFrame({key:value for key,value in adf_test[4].items()},index = [0])
-    adfuller_value = pd.DataFrame(adfuller_value)
-    adfuller_critical_value = adfuller_value['10%'][0]
-    return adf_test_value, adfuller_critical_value
-
-
-def kpss_(timeseries): #kpss检验平稳性
-    kpss_test = kpss(timeseries)
-    kpss_test_value = kpss_test[0]
-    kpss_value = pd.DataFrame({key:value for key,value in kpss_test[3].items()},index = [0])
-    kpss_value = pd.DataFrame(kpss_value)
-    kpss_critical_value = kpss_value['10%'][0]
-    return kpss_test_value, kpss_critical_value
-
-def acorr_ljungbox_(timeseries):
-    a = acorr_ljungbox(timeseries, lags=1)
-    return a[1][0] ### return 检验结果的 p_value值
-
-
-# def smooth_and_nonrandom_test(dataset):
-#
-#     adf_test_value, adf_critical_value = adf_(dataset.value)
-#     kpss_test_value, kpss_critical_value = kpss_(dataset.value)
-#     #
-#     if adf_test_value > adf_critical_value and kpss_test_value > kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
-#         print '原始序列绝对不平稳'
-#         dataset["value_diff"] = dataset["value"] - dataset["value"].shift(1)
-#         ######
-#         dataset = dataset.ix[1:].reset_index()
-#
-#         adf_test_value2, adf_critical_value2 = adf_(dataset.value_diff)
-#         kpss_test_value2, kpss_critical_value2 = kpss_(dataset.value_diff)
-#         if adf_test_value2 < adf_critical_value2 and kpss_test_value2 < kpss_critical_value2:
-#             print '一阶差分后平稳'
-#             a = acorr_ljungbox_(dataset.value_diff)
-#             if a < 0.05:
-#                 dataset.value = dataset.value_diff ###由于差分之后时间序列平稳，用差分后的值代替value进行分析；
-#                 list_r = circulation_file_predict_origin_features_select_methods(dataset)
-#
-#     ######需要一个能够自动判断不平稳数据后经过在多次处理后 再循环判断，一直到数据平稳的过程
-#
-#
-#
-#
-#
-#     # if adf_test_value > adf_critical_value and kpss_test_value < kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
-#     #     print '趋势平稳--去除趋势后序列严格平稳'
-#     #
-#     # if adf_test_value < adf_critical_value and kpss_test_value > kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
-#     #     print '差分平稳，利用差分可使序列平稳'
-#     #     dataset["value_diff"] = dataset["value"] - dataset["value"].shift(1)
-#     #     adf_test2 =  unitroot_adf(dataset.value_diff)
-#     #     # adfuller_value2= pd.DataFrame({key:value for key,value in adf_test[4].items()},index = [0])
-#     #     # adfuller_value = pd.DataFrame(adfuller_value)
-#     #     print adf_test2
-#     #
-#     # elif adf_test_value < adf_critical_value and kpss_test_value < kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
-#     #     print '绝对平稳'
-#     #     list_r = circulation_file_predict_origin_features_select_methods(dataset)
-#     #     list_to_print.append(list_r)
-#     # print kpss(dataset.value)
-#
-#
-#
 
 
 
@@ -681,64 +782,29 @@ def acorr_ljungbox_(timeseries):
     return a[1][0] ### return 检验结果的 p_value值
 
 
-# def smooth_and_nonrandom_test(dataset):
-#
-#     adf_test_value, adf_critical_value = adf_(dataset.value)
-#     kpss_test_value, kpss_critical_value = kpss_(dataset.value)
-#     #
-#     if adf_test_value > adf_critical_value and kpss_test_value > kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
-#         print '原始序列绝对不平稳'
-#         dataset["value_diff"] = dataset["value"] - dataset["value"].shift(1)
-#         ######
-#         dataset = dataset.ix[1:].reset_index()
-#
-#         adf_test_value2, adf_critical_value2 = adf_(dataset.value_diff)
-#         kpss_test_value2, kpss_critical_value2 = kpss_(dataset.value_diff)
-#         if adf_test_value2 < adf_critical_value2 and kpss_test_value2 < kpss_critical_value2:
-#             print '一阶差分后平稳'
-#             a = acorr_ljungbox_(dataset.value_diff)
-#             if a < 0.05:
-#                 dataset.value = dataset.value_diff ###由于差分之后时间序列平稳，用差分后的值代替value进行分析；
-#                 list_r = circulation_file_predict_origin_features_select_methods(dataset)
-#
-#     ######需要一个能够自动判断不平稳数据后经过在多次处理后 再循环判断，一直到数据平稳的过程
-#
-#
-#
-#
-#
-#     # if adf_test_value > adf_critical_value and kpss_test_value < kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
-#     #     print '趋势平稳--去除趋势后序列严格平稳'
-#     #
-#     # if adf_test_value < adf_critical_value and kpss_test_value > kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
-#     #     print '差分平稳，利用差分可使序列平稳'
-#     #     dataset["value_diff"] = dataset["value"] - dataset["value"].shift(1)
-#     #     adf_test2 =  unitroot_adf(dataset.value_diff)
-#     #     # adfuller_value2= pd.DataFrame({key:value for key,value in adf_test[4].items()},index = [0])
-#     #     # adfuller_value = pd.DataFrame(adfuller_value)
-#     #     print adf_test2
-#     #
-#     # elif adf_test_value < adf_critical_value and kpss_test_value < kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
-#     #     print '绝对平稳'
-#     #     list_r = circulation_file_predict_origin_features_select_methods(dataset)
-#     #     list_to_print.append(list_r)
-#     # print kpss(dataset.value)
-#
-#
-#
 
 
-from sklearn.tree import export_graphviz
-import graphviz
+##平稳性测试
+def adf_(timeseries): # adf_ 检验平稳性
+    adf_test = unitroot_adf(timeseries)
+    adf_test_value = adf_test[0]
+    adfuller_value = pd.DataFrame({key:value for key,value in adf_test[4].items()},index = [0])
+    adfuller_value = pd.DataFrame(adfuller_value)
+    adfuller_critical_value = adfuller_value['10%'][0]
+    return adf_test_value, adfuller_critical_value
 
 
-def plot_tree(clf, title="example"):
-    from sklearn.tree import export_graphviz
-    import graphviz
-    dot_data = export_graphviz(clf, out_file=None)
-    graph = graphviz.Source(dot_data)
-    graph.render(title)
-    pass
+def kpss_(timeseries): #kpss检验平稳性
+    kpss_test = kpss(timeseries)
+    kpss_test_value = kpss_test[0]
+    kpss_value = pd.DataFrame({key:value for key,value in kpss_test[3].items()},index = [0])
+    kpss_value = pd.DataFrame(kpss_value)
+    kpss_critical_value = kpss_value['10%'][0]
+    return kpss_test_value, kpss_critical_value
+
+def acorr_ljungbox_(timeseries):
+    a = acorr_ljungbox(timeseries, lags=1)
+    return a[1][0] ### return 检验结果的 p_value值
 
 
 
@@ -750,134 +816,51 @@ def plot_tree(clf, title="example"):
 ##########################################--- main ----#####################################################################
 if __name__ == "__main__":
 
-
-    global x_features_selected
-
     warnings.filterwarnings("ignore")
+
+    # df, _ = load_robot_execution_failures()
+    # df = pd.read_csv("/Users/xumiaochun/python_workspace/southern_power_grid/data/multiple/pipeline_test_input_node_train_data.csv")
+    # df['timestamp'] = df['timestamp'].map(millisec_to_str)
+    # df['timestamp'] = df['timestamp'].map(pd.to_datetime)
+    # df = df.sort_values(by=['line_id','timestamp'], ascending=True)
+    # df = df.reset_index(drop = True)
+    # df.to_csv("/Users/xumiaochun/python_workspace/southern_power_grid/data/multiple/a.csv",index = False)
+    #
+
+
+    df= pd.read_csv("/Users/xumiaochun/python_workspace/southern_power_grid/data/multiple/a.csv")
+    # df['timestamp'] = df['timestamp'].map(millisec_to_str)
+    df.rename(columns={"timestamp":"timestamps", "label":"anomaly","point":"value"}, inplace=True)
+
+    # df = df.head(12000)
+    df['timestamps'] = df['timestamps'].map(pd.to_datetime)
+    df['Hour_Minute'] = df['timestamps'].dt.time
+    df['Date'] = df['timestamps'].dt.date
+    # X = extract_relevant_features(df, df.label, column_id='id', column_sort='time')
+    # # X = extract_features(df, column_id='line_id', column_sort='time')
+    # # print X.head(300)
+
+    a = df.drop_duplicates(['line_id'])
+    a_name = a.line_id
+    a_name = list(a_name)
+    # print a_name.values.shape
+
+    df = df.set_index("line_id")
+
+    #
+    # # #-------------
     window = 14
-    DEFAULT_WINDOW = 14
-    k = pd.read_csv('data/ydata-labeled-time-series-anomalies-v1_0/A4Benchmark/totoal_file_and_name.csv')
-    k = pd.DataFrame(k)
-    list_to_print = []
-    for i in range(0,len(k)):
-        location = k["location"].ix[i]
-        filename = k["filename"].ix[i]
-        total_dataset = pd.read_csv('{}'.format(location))
-        if i >= 124:
-            total_dataset.rename(columns={"timestamp":"timestamps", "is_anomaly":"anomaly"}, inplace=True)
-        ##--1。时间处理格式，顺序--##
-        total_dataset['timestamps'] = total_dataset['timestamps'].map(millisec_to_str)
-        total_dataset['timestamps'] = total_dataset['timestamps'].map(pd.to_datetime)
-        total_dataset = total_dataset.sort_values(by=['timestamps'], ascending=True)
-
-        ##--2。判断确实值并对缺失数据进行填充，目标只针对timestamps,value,anomaly--##--
-        if total_dataset.timestamps.isnull().any():
-            total_dataset.dropna(subset=['timestamps'])
-        if total_dataset.anomaly.isnull().any():
-            total_dataset.dropna(subset=['anomaly'])
-        if total_dataset.value.isnull().any():
-            total_dataset.fillna(total_dataset.value.mean())
-
-        # #数据拆分和合成新列
-        #   #时间数据拆分--根据timestamps添加2个新列--Date和Hour_Minute
-        total_dataset['Hour_Minute'] = total_dataset['timestamps'].dt.time
-        total_dataset['Date'] = total_dataset['timestamps'].dt.date
-
-        #     #########total_dataset中含有两新列----Date和Hour_Minute
-        DAY_PNT = len(total_dataset.loc[total_dataset['Date'] == total_dataset['Date'].ix[len(total_dataset)/2]])
-
-        lenth_total_dataset = len(total_dataset)
-        win_sli = window + 7 * DAY_PNT
-        lenth_new_dataset = len(total_dataset.ix[win_sli-1:]) #真正有特征值部分的数据集
-
-        training_data, test_data = train_test_split(total_dataset.ix[win_sli-1:], test_size = 0.3, shuffle=False)
-        train_ = total_dataset.ix[win_sli-1:int(lenth_new_dataset*0.7)+win_sli-1]
-        test_ = total_dataset.ix[int(lenth_new_dataset*0.7)+win_sli-1:]
-
-        # plt.plot(total_dataset.value)
-        # plt.legend(loc= 'best',fontsize= 5)
-        # plt.xticks(rotation=30)
-        # plt.title('Value view')# give plot a title
-        # plt.show()
-        #break
-        #
-        # #
-        if win_sli < int(len(total_dataset)*0.3) and len(test_.loc[test_['anomaly'] == 1]) > 0 and len(train_.loc[train_['anomaly'] == 1]) > 0: ####（要加入判断时间序列的分析有没有价值的判断方法）
-            print total_dataset.head(3)
-            total_dataset.to_csv("for_look.csv")
-            anomaly_view(total_dataset)#观察异常点和整体时序走向 （未进行数据平稳处理前）
-            # #判断序列的平稳性
-            # plt.stem(stattools.acf(total_dataset.value))
-            # plt.stem(stattools.pacf(total_dataset.value))
-            # plt.show()
+    for i in range(0,len(a_name)):
+        total_dataset = df.loc[a_name[i]]
+        total_dataset = total_dataset.reset_index(drop = True)
+        if len(total_dataset.loc[total_dataset['anomaly'] == 1]) > 0:
+            anomaly_view(total_dataset)
+            target_date = total_dataset.Date[len(total_dataset)-1]
+            a = '{}'.format(target_date)
+            last_two_days_anomaly_view(a)
 
 
-            # # by values
-            adf_test_value, adf_critical_value = adf_(total_dataset.value)
-            kpss_test_value, kpss_critical_value = kpss_(total_dataset.value)
-            # a = acorr_ljungbox(total_dataset.value, lags=1)
-            adf_test = unitroot_adf(total_dataset.value)
-            kpss_test = kpss(total_dataset.value)
-
-            # print '\nacorr_ljungbox\n',a
-            print '\nunitroot_adf',adf_test
-            print '\nkpss\n',kpss_test
-
-            #
-            if adf_test_value > adf_critical_value and kpss_test_value > kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
-                print '原始序列绝对不平稳'
-                total_dataset["value_diff"] = total_dataset["value"] - total_dataset["value"].shift(1)
-                ######
 
 
-                total_dataset = total_dataset.ix[1:].reset_index()
-                adf_test_value2, adf_critical_value2 = adf_(total_dataset.value_diff)
-                kpss_test_value2, kpss_critical_value2 = kpss_(total_dataset.value_diff)
 
 
-                a2 = acorr_ljungbox(total_dataset.value, lags=1)
-                adf_test2 = unitroot_adf(total_dataset.value)
-                kpss_test2 = kpss(total_dataset.value)
-            #
-                print '\nacorr_ljungbox\n',a2
-                print '\nunitroot_adf',adf_test2
-                print '\nkpss\n',kpss_test2
-            #
-            #
-            #
-            #
-                if adf_test_value2 < adf_critical_value2 and kpss_test_value2 < kpss_critical_value2:
-                    print '一阶差分后平稳'
-                    a = acorr_ljungbox_(total_dataset.value_diff)
-                    if a < 0.05:
-                        total_dataset.value = total_dataset.value_diff ###由于差分之后时间序列平稳，用差分后的值代替value进行分析；
-                        list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
-                    else: break
-            #
-            # ######补充一个能够自动判断不平稳数据后经过在多次处理后 再循环判断，一直到数据平稳的过程
-            #
-            #
-            #
-            # # if adf_test_value > adf_critical_value and kpss_test_value < kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
-            # #     print '趋势平稳--去除趋势后序列严格平稳'
-            # #
-            # # if adf_test_value < adf_critical_value and kpss_test_value > kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
-            # #     print '差分平稳，利用差分可使序列平稳'
-            # #     total_dataset["value_diff"] = total_dataset["value"] - total_dataset["value"].shift(1)
-            # #     adf_test2 =  unitroot_adf(total_dataset.value_diff)
-            # #     # adfuller_value2= pd.DataFrame({key:value for key,value in adf_test[4].items()},index = [0])
-            # #     # adfuller_value = pd.DataFrame(adfuller_value)
-            # #     print adf_test2
-            # #
-            # elif adf_test_value < adf_critical_value and kpss_test_value < kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
-            #     print '绝对平稳'
-            #     a = acorr_ljungbox_(total_dataset.value_diff)
-            #     if a < 0.05:
-            #         list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
-            #     else: break
-            #
-            #
-
-            break ##只跑一个数据集
-            #
-            #

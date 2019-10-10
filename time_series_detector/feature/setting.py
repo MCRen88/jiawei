@@ -167,12 +167,12 @@ class ComprehensiveFCParameters(dict):
     #     })
     #
     #     super(ComprehensiveFCParameters, self).__init__(name_to_param)
-    def __init__(self):
-        name_to_param = {}
-
-        for name, func in feature_calculators.__dict__.items():
-            if callable(func) and hasattr(func, "fctype") and len(getargspec(func).args) == 1:
-                name_to_param[name] = None
+    # def __init__(self):
+    #     name_to_param = {}
+    #
+    #     for name, func in feature_calculators.__dict__.items():
+    #         if callable(func) and hasattr(func, "fctype") and len(getargspec(func).args) == 1:
+    #             name_to_param[name] = None
 
         name_to_param.update({
             "time_reversal_asymmetry_statistic": [{"lag": lag} for lag in range(1, 4)],

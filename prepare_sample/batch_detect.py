@@ -43,3 +43,4 @@ if __name__=="__main__":
 
 	df1 = gen_label_online(df, "local")
 	print(df1[df1.label == 1].shape)
+

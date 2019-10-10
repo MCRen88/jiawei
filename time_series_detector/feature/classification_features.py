@@ -9,6 +9,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
 """
 
 import numpy as np
+import pandas as pd
 import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators
 from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_series
 from statistical_features import time_series_mean, time_series_variance, time_series_standard_deviation, time_series_median
@@ -204,7 +205,9 @@ def time_series_window_parts_value_distribution_with_threshold_get_dict(x):
             name = ("time_series_window_parts_value_distribution_with_threshold_{}".format(a))
             a =a+1
             if sum(count_list) == 0:
-                features = [0, 0, 0, 0, 0]
+                # features = [0, 0, 0, 0, 0]
+                features = [{'time_series_window_parts_value_distribution_with_threshold_Ais0':0}, {'time_series_window_parts_value_distribution_with_threshold_bis0':0}, {'time_series_window_parts_value_distribution_with_threshold_cis0':0}, {'time_series_window_parts_value_distribution_with_threshold_Dis0':0}, {'time_series_window_parts_value_distribution_with_threshold_Eis0':0}]
+
             else:
                 features = temp/float((DEFAULT_WINDOW + 1))
                     # list(np.array(count_list) / float((DEFAULT_WINDOW + 1)))
@@ -242,6 +245,7 @@ def time_series_window_parts_value_distribution_with_threshold(x):
     # return features
 
     a = time_series_window_parts_value_distribution_with_threshold_get_dict(x)
+    a = pd.DataFrame(a)
     return a
 
 
@@ -263,7 +267,7 @@ def get_classification_features(x):
 
 
     classification_features.extend(time_series_daily_parts_value_distribution_with_threshold(x))
-    classification_features.extend(time_series_window_parts_value_distribution_with_threshold(x))
+    # classification_features.extend(time_series_window_parts_value_distribution_with_threshold(x))
     classification_features.extend(time_series_binned_entropy(x))
     # add yourself classification features here...
 

@@ -212,9 +212,9 @@ def calculate_all_features(time_series, window):
     # nomalize time_series
     normalized_split_time_series = tsd_common.normalize_time_series(split_time_series)
     max_min_normalized_time_series = tsd_common.normalize_time_series_by_max_min(split_time_series)
-    s_features = statistical_features.get_statistical_features(normalized_split_time_series[4])
-    c_features = classification_features.get_classification_features(max_min_normalized_time_series)
-    f_features = fitting_features.get_fitting_features(normalized_split_time_series)
+    # s_features = statistical_features.get_statistical_features(normalized_split_time_series[4])
+    # c_features = classification_features.get_classification_features(max_min_normalized_time_series)
+    # f_features = fitting_features.get_fitting_features(normalized_split_time_series)
     s_features_with_parameter1 = statistical_features.get_parameters_features(max_min_normalized_time_series)
 
     # features = s_features + c_features + f_features + s_features_with_parameter1
