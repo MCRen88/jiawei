@@ -1,4 +1,5 @@
 led / optimized / DLL files
+*tmp*
 __pycache__/
 *.py[cod]
 *$py.class

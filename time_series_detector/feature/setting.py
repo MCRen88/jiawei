@@ -22,7 +22,7 @@ from tsfresh.feature_extraction import feature_calculators
 from tsfresh.utilities.string_manipulation import get_config_from_string
 from itertools import product
 
-from time_series_detector.feature import feature_calculators
+# from time_series_detector.feature import feature_calculators
 
 
 def from_columns(columns, columns_to_ignore=None):
@@ -167,8 +167,8 @@ class ComprehensiveFCParameters(dict):
     #     })
     #
     #     super(ComprehensiveFCParameters, self).__init__(name_to_param)
-    # def __init__(self):
-    #     name_to_param = {}
+    def __init__(self):
+        name_to_param = {}
     #
     #     for name, func in feature_calculators.__dict__.items():
     #         if callable(func) and hasattr(func, "fctype") and len(getargspec(func).args) == 1:
