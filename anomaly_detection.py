@@ -24,24 +24,9 @@ import matplotlib.pyplot as plt
 
 
 from sklearn.metrics import classification_report,confusion_matrix,f1_score,average_precision_score
-from sklearn import datasets, svm
-from sklearn.feature_selection import chi2,mutual_info_classif
+
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.feature_selection import VarianceThreshold,SelectFromModel
-from sklearn.metrics import precision_recall_curve
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import SelectPercentile, f_classif
 
-from statsmodels.stats.diagnostic import unitroot_adf
-# import tushare as ts
-from statsmodels.tsa import stattools
-from statsmodels.tsa.stattools import kpss
-from statsmodels.stats.diagnostic import acorr_ljungbox
-
-from tsfresh.feature_extraction.settings import ComprehensiveFCParameters
-# from imblearn.over_sampling import SMOTE #数据不均衡
-# from scikitplot.classifiers import plot_precision_recall_curve
 
 # from time_series_detector.feature.extraction import *
 from time_series_detector.algorithm.gbdt import *
@@ -53,7 +38,6 @@ from visualize.plot_ts import anomaly_view, plot_hist
 from time_series_detector.feature.features_calculate_select \
     import combine_features_calculate,sliding_window, combine_features_calculate\
     , features_selected_ExtraTreesClassifier,selected_columns_names, feature_extraction
-
 from visualize.plot_forcast_result import Precision_Recall_Curve, plot_auc, anomaly_predict_view\
     , anomaly_score_view_predict, anomaly_score_view_date
 from visualize.plot_stable_view import value_stable_determinate
@@ -178,10 +162,7 @@ def circulation_file_predict_origin_features_select_methods(total_dataset):
     predict_report_train = classification_report (training_data.anomaly,y_pred_train, labels=[1, 2, 3])
     predict_report_test = classification_report (test_data.anomaly,y_pred_test, labels=[1, 2, 3])
 
-    # print '\n\npredict_report_train\n\n',predict_report_train,'\n\npredict_report_test\n\n\n',predict_report_test
 
-    # #结果根据时间窗添加到原始total——dataset中
-    # print "\n\ntraining_data\n",training_data,"\n\ntest_data\n",test_data,"\n\n\nnew_dataset\n",new_dataset
 
 
     anomaly_pred = []
@@ -206,7 +187,6 @@ def circulation_file_predict_origin_features_select_methods(total_dataset):
 # #对异常的预测情况的precision_recall的画图；
     Precision_Recall_Curve(training_data.anomaly, anomaly_score_train,test_data.anomaly, anomaly_score_test)
 
-    # #单独的precision和recall图
 
 
 
