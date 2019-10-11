@@ -161,7 +161,6 @@ def circulation_file_predict_origin_features_select_methods(total_dataset):
 
     #特征选择
     x_features_selected,y_calculate, selected_features_name = feature_extraction(total_dataset,window)
-
     #在进行数据集 split；从win+7day开始--从win+7day开始的数据集
     new_dataset = total_dataset.iloc[win_sli-1:,:]
     new_dataset = new_dataset.reset_index(drop= True)
