@@ -308,7 +308,6 @@ def day_based_changed(target_date):
         plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+', color = 'red',label='Line_{}'.format(target_date))
     # delta=datetime.timedelta(days=1)
 
-
     # time = '2019-06-10 22:45:00'
     target_date2 = datetime.datetime.strptime(target_date,"%Y-%m-%d")
     yesterday = target_date2 - datetime.timedelta(days = 1)
@@ -319,6 +318,13 @@ def day_based_changed(target_date):
     if len(line.loc[line['anomaly']== 1])>0:
         line_anomaly = line.loc[line['anomaly']== 1]
         plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red', label='Line_{}'.format(yesterday))
+
+    line = total_dataset_Date_index.loc[last_week] ##12。24为基准
+    line_name = 'Line_{}'.format(last_week)
+    plt.plot(line.Hour_Minute, line.value,label=line_name,alpha = 0.4)
+    if len(line.loc[line['anomaly']== 1])>0:
+        line_anomaly = line.loc[line['anomaly']== 1]
+        plt.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red')
 
     plt.title('{} Day-based Comparison (with yesterday and last week)'.format(target_date))
     plt.legend(bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0)

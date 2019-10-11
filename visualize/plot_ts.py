@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import warnings
 warnings.filterwarnings("ignore")
+import sys   
+sys.setrecursionlimit(1000000)
 
 from os import listdir
 from os.path import join
@@ -52,3 +54,15 @@ def plot_hist(df, detect_days = 2, plot_day_index=[1,7], anom_col = None , value
         anom_df_slice.plot(c="g", linewidth=5, style='>', label=info)
     return plt
 
+
+
+def anomaly_view(dataset):
+    y_train_anomaly_dataset_selcted = dataset.set_index("anomaly")
+    y_train_anomaly_dataset_selcted = y_train_anomaly_dataset_selcted.loc[1]
+
+    plt.plot(pd.to_datetime(dataset.timestamps),dataset.value, color = 'black',alpha = 0.3)
+    plt.scatter(pd.to_datetime(np.array(y_train_anomaly_dataset_selcted.timestamps)),y_train_anomaly_dataset_selcted.value, color='red',marker='+', label='Maxmin_value_anomaly')
+    plt.legend(loc= 'best',fontsize= 5)
+    plt.xticks(rotation=30)
+    plt.title('Value and Anomaly view')# give plot a title
+    plt.show()
