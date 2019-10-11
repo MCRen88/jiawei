@@ -242,6 +242,7 @@ if __name__ == "__main__":
         total_dataset = pd.read_csv('{}'.format(location))
         if i >= 124:
             total_dataset.rename(columns={"timestamp":"timestamps", "is_anomaly":"anomaly"}, inplace=True)
+
         total_dataset = characteristics_format_match(total_dataset) #total_dataset中含有两新列----Date和Hour_Minute
         DAY_PNT = len(total_dataset.loc[total_dataset['Date'] == total_dataset['Date'].ix[len(total_dataset)/2]])
         lenth_total_dataset = len(total_dataset)
