@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-
+"""
+特征生成函数的输入输出规范：
+    输入：list, 时间序列片段
+    输出：float or int, 该片段的特征值
+"""
 
 from __future__ import absolute_import, division
 
@@ -19,7 +23,9 @@ from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_se
 __all__ = ["time_series_moving_average",
            "time_series_weighted_moving_average",
            "time_series_exponential_weighted_moving_average",
-           "time_series_double_exponential_weighted_moving_average","time_series_periodic_features",
+           "time_series_double_exponential_weighted_moving_average",
+
+           "time_series_periodic_features",
            "binned_entropy",
            "quantile",
            "binned_entropy",
@@ -31,6 +37,12 @@ __all__ = ["time_series_moving_average",
            "number_cwt_peaks"]
 
 
+
+#####
+def time_series_moving_average(x, window_size=5):
+    x = np.array(x)
+    fea = np.mean(x[-window_size:])
+    return fea
 
 
 
@@ -49,6 +61,7 @@ def time_series_moving_average_get_dict(x):
             name = ("statistical_time_series_moving_average_{}".format(w))
             yield {'{}'.format(name):temp__}
     return list(_f())
+
 
 def time_series_moving_average(x): ########为什么从后开始计算平均值？？？？
     """
