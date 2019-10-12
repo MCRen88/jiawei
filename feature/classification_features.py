@@ -12,7 +12,14 @@ import numpy as np
 import pandas as pd
 import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators
 from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_series
-from statistical_features import time_series_mean, time_series_variance, time_series_standard_deviation, time_series_median
+
+
+__all__ = ["time_series_autocorrelation",
+           "time_series_coefficient_of_variation",
+           "time_series_value_distribution",
+           "time_series_daily_parts_value_distribution",
+           "time_series_daily_parts_value_distribution_with_threshold",
+           "time_series_binned_entropy"]
 
 
 def time_series_autocorrelation(x):
@@ -84,11 +91,7 @@ def time_series_binned_entropy(x):
     :return: the value of this feature
     :return type: float
     """
-    # max_bins = [2, 4, 6, 8, 10, 20]
-    # result = []
-    # for value in max_bins:
-    #     result.append(ts_feature_calculators.binned_entropy(x, value))
-    # return result
+
     a = time_series_binned_entropy_get_dict(x)
     return a
 
@@ -228,21 +231,7 @@ def time_series_window_parts_value_distribution_with_threshold(x):
     :return: 5 values of this feature
     :return type: list
     """
-    # threshold = 0.01
-    # split_value_list = split_time_series(x, DEFAULT_WINDOW)
-    #
-    # count_list = []
-    # for value_list in split_value_list:
-    #     nparray_threshold = np.array(value_list)
-    #     nparray_threshold[nparray_threshold < threshold] = -1
-    #     count_list.append((nparray_threshold == -1).sum())
-    #
-    # if sum(count_list) == 0:
-    #     features = [0, 0, 0, 0, 0]
-    # else:
-    #     features = list(np.array(count_list) / float((DEFAULT_WINDOW + 1)))
-    #
-    # return features
+
 
     a = time_series_window_parts_value_distribution_with_threshold_get_dict(x)
     a = pd.DataFrame(a)
@@ -251,24 +240,3 @@ def time_series_window_parts_value_distribution_with_threshold(x):
 
 # add yourself classification features here...
 
-
-def get_classification_features(x):
-    classification_features =[
-        {"time_series_mean_classification":time_series_mean(x)},
-        {"time_series_variance_classification":time_series_variance(x)},
-        {"time_series_standard_deviation_classification":time_series_standard_deviation(x)},
-        {"time_series_median_classification":time_series_median(x)},
-        {"time_series_autocorrelation_classification":time_series_autocorrelation(x)},
-        {"time_series_coefficient_of_variation_classification":time_series_coefficient_of_variation(x)},
-    ]
-    classification_features.extend(time_series_value_distribution(x))
-    classification_features.extend(time_series_daily_parts_value_distribution(x))
-
-
-
-    classification_features.extend(time_series_daily_parts_value_distribution_with_threshold(x))
-    # classification_features.extend(time_series_window_parts_value_distribution_with_threshold(x))
-    classification_features.extend(time_series_binned_entropy(x))
-    # add yourself classification features here...
-
-    return classification_features
