@@ -14,7 +14,7 @@ import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators
 import time_series_detector.feature.feature_calculators_withparam as ts_feature_calculators_without_param
 import warnings
 import pandas as pd
-from time_series_detector.feature.setting import ComprehensiveFCParameters
+from feature.setting import ComprehensiveFCParameters
 
 
 def time_series_maximum(x):

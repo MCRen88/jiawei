@@ -36,7 +36,11 @@ feature: 存放时间序列特征相关的计算逻辑
     int(time_series_has_duplicate_min)
     time_series_longest_strike_above_mean
     time_series_longest_strike_below_mean
-
+    time_series_first_location_of_maximum
+    time_series_first_location_of_minimum
+    time_series_last_location_of_maximum
+    time_series_last_location_of_minimum
+    
 	。。。
 - 异常检测相关特征(feature_anom.py)：
 	- 局部异常特征：
@@ -50,6 +54,8 @@ feature: 存放时间序列特征相关的计算逻辑
 		change_quantiles（译：给定区间的时序数据描述统计，然后在这个区间里计算时序数据的均值、绝对值、连续变化值。（浮点数））
 		number_crossing_m
 		energy_ratio_by_chunks 分块局部熵比率（将时序数据分块后，计算目标块数据的熵与全体的熵比率。当数据不够均分时，会将多余的数据在前面的块中散布。（浮点数））
+        agg_linear_trend    基于分块时序聚合值的线性回归
+        number_cwt_peaks
                                		
 	- 周期性异常特征：
 		time_series_periodic_feature 。。。
@@ -77,26 +83,17 @@ feature: 存放时间序列特征相关的计算逻辑
 	spkt_welch_density：译：该特征计算器估计不同频率下时间序列x的交叉功率谱密度。为此，首先将时间序列从时域转移到频域。
                        特征计算器返回不同频率的功率谱。
 	
-	
-	
-	。。。
-	
+    linear_trend 译：线性回归分析
+	linear_trend_timewise
+	fft_coefficient
 	
 	
 	
 	---unsure
-	linear_trend
-	linear_trend_timewise
-    number_cwt_peaks
+    
     index_mass_quantile：计算某分位数对应的索引值（pandas.Series）
-    fft_coefficient                    
     max_langevin_fixed_point
-    linear_trend 译：线性回归分析
-    agg_linear_trend    基于分块时序聚合值的线性回归
-    time_series_first_location_of_maximum
-    time_series_first_location_of_minimum
-    time_series_last_location_of_maximum
-    time_series_last_location_of_minimum
+
     
     --delete
     value_count：译：计算时间序列x中value出现的次数

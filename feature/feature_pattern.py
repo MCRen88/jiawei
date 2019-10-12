@@ -31,7 +31,11 @@ __all__ = [	"time_series_autocorrelation",
                "symmetry_looking",
                "time_reversal_asymmetry_statistic",
                "c3",
-               "spkt_welch_density"]
+               "spkt_welch_density",
+               "linear_trend",
+                "linear_trend_timewise",
+                "fft_coefficient"
+]
 
 
 
@@ -797,4 +801,104 @@ def spkt_welch_density(x, param):
         t = pxx[[config["coeff"] for config in param]]
 
         return t
+
+
+def linear_trend(x, param):
+    """
+    Calculate a linear least-squares regression for the values of the time series versus the sequence from 0 to
+    length of the time series minus one.
+    This feature assumes the signal to be uniformly sampled. It will not use the time stamps to fit the model.
+    The parameters control which of the characteristics are returned.
+
+    Possible extracted attributes are "pvalue", "rvalue", "intercept", "slope", "stderr", see the documentation of
+    linregress for more information.
+
+    :param x: the time series to calculate the feature of
+    :type x: numpy.ndarray
+    :param param: contains dictionaries {"attr": x} with x an string, the attribute name of the regression model
+    :type param: list
+    :return: the different feature values
+    :return type: pandas.Series
+    """
+    # todo: we could use the index of the DataFrame here
+    linReg = linregress(range(len(x)), x)
+
+    return [getattr(linReg, config["attr"])
+            for config in param]
+
+
+
+def linear_trend_timewise(x, param):
+    """
+    Calculate a linear least-squares regression for the values of the time series versus the sequence from 0 to
+    length of the time series minus one.
+    This feature uses the index of the time series to fit the model, which must be of a datetime
+    dtype.
+    The parameters control which of the characteristics are returned.
+
+    Possible extracted attributes are "pvalue", "rvalue", "intercept", "slope", "stderr", see the documentation of
+    linregress for more information.
+
+    :param x: the time series to calculate the feature of. The index must be datetime.
+    :type x: pandas.Series
+    :param param: contains dictionaries {"attr": x} with x an string, the attribute name of the regression model
+    :type param: list
+    :return: the different feature values
+    :return type: list
+    """
+    ix = x.index
+
+    # Get differences between each timestamp and the first timestamp in seconds.
+    # Then convert to hours and reshape for linear regression
+    times_seconds = (ix - ix[0]).total_seconds()
+    times_hours = np.asarray(times_seconds / float(3600))
+
+    linReg = linregress(times_hours, x.values)
+
+    return [getattr(linReg, config["attr"])
+            for config in param]
+def fft_coefficient(x, param):
+    """
+    Calculates the fourier coefficients of the one-dimensional discrete Fourier Transform for real input by fast
+    fourier transformation algorithm
+
+    .. math::
+        A_k =  \\sum_{m=0}^{n-1} a_m \\exp \\left \\{ -2 \\pi i \\frac{m k}{n} \\right \\}, \\qquad k = 0,
+        \\ldots , n-1.
+
+    The resulting coefficients will be complex, this feature calculator can return the real part (attr=="real"),
+    the imaginary part (attr=="imag), the absolute value (attr=""abs) and the angle in degrees (attr=="angle).
+
+    :param x: the time series to calculate the feature of
+    :type x: numpy.ndarray
+    :param param: contains dictionaries {"coeff": x, "attr": s} with x int and x >= 0, s str and in ["real", "imag",
+        "abs", "angle"]
+    :type param: list
+    :return: the different feature values
+    :return type: pandas.Series
+    """
+
+    assert min([config["coeff"] for config in param]) >= 0, "Coefficients must be positive or zero."
+    assert set([config["attr"] for config in param]) <= set(["imag", "real", "abs", "angle"]), \
+        'Attribute must be "real", "imag", "angle" or "abs"'
+
+    fft = np.fft.rfft(x)
+
+    def complex_agg(x, agg):
+        if agg == "real":
+            return x.real
+        elif agg == "imag":
+            return x.imag
+        elif agg == "abs":
+            return np.abs(x)
+        elif agg == "angle":
+            return np.angle(x, deg=True)
+
+    res = [complex_agg(fft[config["coeff"]], config["attr"]) if config["coeff"] < len(fft)
+           else np.NaN for config in param]
+    index = ['coeff_{}__attr_"{}"'.format(config["coeff"], config["attr"]) for config in param]
+    # return zip(index, res)
+    # return zip(res)
+    return (complex_agg(fft[config["coeff"]], config["attr"]) if config["coeff"] < len(fft)
+            else np.NaN for config in param)
 

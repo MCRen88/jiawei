@@ -26,7 +26,9 @@ __all__ = ["time_series_moving_average",
            "change_quantiles",
            "number_crossing_m",
            "energy_ratio_by_chunks",
-           "energy_ratio_by_chunks"]
+           "energy_ratio_by_chunks",
+           "agg_linear_trend",
+           "number_cwt_peaks"]
 
 
 
@@ -523,3 +525,78 @@ def energy_ratio_by_chunks(x, param):
     res_data = np.array(res_data)
     # return list(zip(res_index, res_data)) # Materialize as list for Python 3 compatibility with name handling
     return res_data # Materialize as list for Python 3 compatibility with name handling
+
+
+def agg_linear_trend(x, param):
+    """
+    Calculates a linear least-squares regression for values of the time series that were aggregated over chunks versus
+    the sequence from 0 up to the number of chunks minus one.
+
+    This feature assumes the signal to be uniformly sampled. It will not use the time stamps to fit the model.
+
+    The parameters attr controls which of the characteristics are returned. Possible extracted attributes are "pvalue",
+    "rvalue", "intercept", "slope", "stderr", see the documentation of linregress for more information.
+
+    The chunksize is regulated by "chunk_len". It specifies how many time series values are in each chunk.
+
+    Further, the aggregation function is controlled by "f_agg", which can use "max", "min" or , "mean", "median"
+
+    :param x: the time series to calculate the feature of
+    :type x: numpy.ndarray
+    :param param: contains dictionaries {"attr": x, "chunk_len": l, "f_agg": f} with x, f an string and l an int
+    :type param: list
+    :return: the different feature values
+    :return type: pandas.Series
+    """
+    # todo: we could use the index of the DataFrame here
+
+    calculated_agg = {}
+    res_data = []
+    res_index = []
+    x = np.array(x)
+    for parameter_combination in param:
+
+        chunk_len = parameter_combination["chunk_len"]
+        f_agg = parameter_combination["f_agg"]
+
+        aggregate_result = _aggregate_on_chunks(x, f_agg, chunk_len)
+        a = aggregate_result
+        b = range(len(aggregate_result))
+        a1 = pd.DataFrame(a)
+        a2 = a1.values
+        if f_agg not in calculated_agg or chunk_len not in calculated_agg[f_agg]:
+            if chunk_len >= len(x):
+                calculated_agg[f_agg] = {chunk_len: np.NaN}
+
+            else:
+                lin_reg_result = linregress(range(len(aggregate_result)), aggregate_result)
+                calculated_agg[f_agg] = {chunk_len: lin_reg_result}
+
+        attr = parameter_combination["attr"]
+
+        if chunk_len >= len(x):
+            res_data.append(np.NaN)
+        else:
+            res_data.append(getattr(calculated_agg[f_agg][chunk_len], attr))
+
+
+        res_index.append("f_agg_\"{}\"__chunk_len_{}__attr_\"{}\"".format(f_agg, chunk_len, attr))
+    return res_data
+#
+
+
+
+def number_cwt_peaks(x, n):
+    """
+    This feature calculator searches for different peaks in x. To do so, x is smoothed by a ricker wavelet and for
+    widths ranging from 1 to n. This feature calculator returns the number of peaks that occur at enough width scales
+    and with sufficiently high Signal-to-Noise-Ratio (SNR)
+
+    :param x: the time series to calculate the feature of
+    :type x: numpy.ndarray
+    :param n: maximum width to consider
+    :type n: int
+    :return: the value of this feature
+    :return type: int
+    """
+    return len(find_peaks_cwt(vector=x, widths=np.array(list(range(1, n + 1))), wavelet=ricker))

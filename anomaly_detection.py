@@ -34,7 +34,7 @@ import time_series_detector.algorithm.gbdt
 from data_pre_processing.stable_random_test import model_makesense_determinate
 from data_pre_processing.data_format_match import characteristics_format_match
 from visualize.plot_ts import anomaly_view, plot_hist
-from time_series_detector.feature.features_calculate_select \
+from feature.features_calculate_select \
     import combine_features_calculate,sliding_window, combine_features_calculate\
     , features_selected_ExtraTreesClassifier,selected_columns_names, feature_extraction,cal_features_based_on_id
 from visualize.plot_forcast_result import Precision_Recall_Curve, plot_auc, anomaly_predict_view\

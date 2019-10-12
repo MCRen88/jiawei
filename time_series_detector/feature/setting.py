@@ -175,7 +175,7 @@ class ComprehensiveFCParameters(dict):
     #             name_to_param[name] = None
 
         name_to_param.update({
-            "time_reversal_asymmetry_statistic": [{"lag": lag} for lag in range(1, 4)],
+            # "time_reversal_asymmetry_statistic": [{"lag": lag} for lag in range(1, 4)],
             # "c3": [{"lag": lag} for lag in range(1, 4)],
             # "cid_ce": [{"normalize": True}, {"normalize": False}],
             # "symmetry_looking": [{"r": r * 0.05} for r in range(20)],

@@ -99,8 +99,8 @@ from time_series_detector.common.tsd_common import *
 #     return fitting_features
 
 def extract_features_with_param(time_series, window):
-    # type: (object, object) -> object
-    # type: (object, object) -> object
+    ## type: (object, object) -> object
+    ## type: (object, object) -> object
     """
     Extracts three types of features from the time series.
     :param time_series: the time series to extract the feature of
@@ -151,8 +151,8 @@ def extract_features_with_param(time_series, window):
 
 
 def extract_features_without_param(time_series, window):
-    # type: (object, object) -> object
-    # type: (object, object) -> object
+    ## type: (object, object) -> object
+    ## type: (object, object) -> object
     """
     Extracts three types of features from the time series.
     :param time_series: the time series to extract the feature of
@@ -189,8 +189,8 @@ def extract_features_without_param(time_series, window):
     return features
 
 def calculate_all_features(time_series, window):
-    # type: (object, object) -> object
-    # type: (object, object) -> object
+    ## type: (object, object) -> object
+    ## type: (object, object) -> object
     """
     Extracts three types of features from the time series.
     :param time_series: the time series to extract the feature of

@@ -1719,7 +1719,7 @@ def linear_trend(x, param):
     return [getattr(linReg, config["attr"])
             for config in param]
 
-#
+
 @set_property("fctype", "combiner")
 def cwt_coefficients(x, param):
     """
