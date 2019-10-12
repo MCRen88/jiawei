@@ -12,16 +12,12 @@ feature: 存放时间序列特征相关的计算逻辑
 	time_series_kurtosis
 	time_series_median
 	time_series_sum_values
-	time_series_range
 	time_series_abs_energy
 	time_series_absolute_sum_of_changes
 	time_series_variance_larger_than_std
 	time_series_count_above_mean
 	time_series_count_below_mean
-	time_series_longest_strike_above_mean(x)
-	time_series_longest_strike_below_mean(x)
 	time_series_mean_abs_change(x)
-	time_series_mean_change(x)
 	time_series_percentage_of_reoccurring_datapoints_to_all_datapoints(x)
 	time_series_ratio_value_number_to_time_series_length(x)
 	time_series_sum_of_reoccurring_data_points(x)
