@@ -22,7 +22,17 @@ feature: 存放时间序列特征相关的计算逻辑
 	time_series_ratio_value_number_to_time_series_length
 	time_series_sum_of_reoccurring_data_points
 	time_series_sum_of_reoccurring_values
-		
+    time_series_range
+    time_series_mean_change
+    time_series_has_duplicate
+    time_series_has_duplicate_min
+    time_series_longest_strike_above_mean
+    time_series_longest_strike_below_mean
+    time_series_first_location_of_maximum
+    time_series_first_location_of_minimum
+    time_series_last_location_of_maximum
+    time_series_last_location_of_minimum
+    		
 	abs_energy
 	friedrich_coefficients （param (list) {“m”: x, “r”: y, “coeff”: z} x为正整数，是多项式拟合的最高阶数，y是正实数，用于计算均值的分位数，z为正整数，多项式的第几项。）
 	ratio_beyond_r_sigma：远离 x 的平均值大于 r * std(x)(s r sigma)的值的比率。
@@ -30,16 +40,6 @@ feature: 存放时间序列特征相关的计算逻辑
     number_peaks
     fft_aggregated：返回绝对傅里叶变换后的光谱质心、峰度、偏度等值（pandas.Series）
     ratio_beyond_r_sigma： 译：偏离x的平均值大于r * std(x)(so r sigma)的值的比率。
-    time_series_range
-    time_series_mean_change
-    int(time_series_has_duplicate)
-    int(time_series_has_duplicate_min)
-    time_series_longest_strike_above_mean
-    time_series_longest_strike_below_mean
-    time_series_first_location_of_maximum
-    time_series_first_location_of_minimum
-    time_series_last_location_of_maximum
-    time_series_last_location_of_minimum
     
 	。。。
 - 异常检测相关特征(feature_anom.py)：
