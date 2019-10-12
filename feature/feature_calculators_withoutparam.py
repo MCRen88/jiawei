@@ -24,6 +24,10 @@ from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_se
 from statistical_features import time_series_mean, time_series_variance, time_series_standard_deviation, time_series_median
 
 
+__all__ = ["time_series_autocorrelation",
+            "time_series_coefficient_of_variation", 
+            ..., ]
+
 def time_series_autocorrelation(x):
     """
     Calculates the autocorrelation of the specified lag, according to the formula [1]
