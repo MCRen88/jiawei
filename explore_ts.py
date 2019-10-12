@@ -66,18 +66,11 @@ def extract_selected_id_name():
     for root, dirs, files in os.walk(file_dir):
         print(i)
         i += 1
-        # print(root) #当前目录路径
-    #     print(dirs) #当前路径下所有子目录
-    #     print(files) #当前路径下所有非目录子文件
-    # print(b)
-    selected_data_name = []
-    for l_id in files:
-        # l_id_list = l_id.split("valid")
-        VALID_DAY = files[-1].replace(".png", "")
-        selected_data_name.append(VALID_DAY)
-    selected_data_name = pd.DataFrame(selected_data_name)
-    selected_data_name.to_csv("tmp/selected_name_list.csv",index = False)
-    return  selected_data_name
+        print(root) #当前目录路径
+        print(dirs) #当前路径下所有子目录
+        print(files) #当前路径下所有非目录子文件
+
+    return b
 
 def select_data():
     selected_id = pd.read_csv('/Users/xumiaochun/jiawei/tmp/selected_name_list2.csv')

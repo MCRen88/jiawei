@@ -46,8 +46,7 @@ def model_makesense_determinate (total_dataset):
             a = acorr_ljungbox_(total_dataset.value_diff)
             if a < 0.05:
                 total_dataset.value = total_dataset.value_diff ###由于差分之后时间序列平稳，用差分后的值代替value进行分析；
-                # t = 1
-                # print t
+
 
 
 

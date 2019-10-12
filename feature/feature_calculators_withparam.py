@@ -20,7 +20,7 @@ import itertools
 import warnings
 from builtins import range
 
-import numpy as np
+
 import pandas as pd
 from numpy.linalg import LinAlgError
 from scipy.signal import cwt, find_peaks_cwt, ricker, welch
@@ -30,13 +30,9 @@ from statsmodels.tsa.ar_model import AR
 from statsmodels.tsa.stattools import acf, adfuller, pacf
 
 # todo: make sure '_' works in parameter names in all cases, add a warning if not
-import numpy as np
-from time_series_detector.common.tsd_common import *
 
 import numpy as np
-import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators
 from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_series
-# from statistical_features import time_series_mean, time_series_variance, time_series_standard_deviation, time_series_median
 
 
 def time_series_moving_average(x): ########为什么从后开始计算平均值？？？？
@@ -1904,11 +1900,6 @@ def ratio_value_number_to_time_series_length(x):
 
 
 
-
-#
-
-#
-
 @set_property("fctype", "combiner")
 def linear_trend(x, param):
     """
@@ -1930,8 +1921,6 @@ def linear_trend(x, param):
     # todo: we could use the index of the DataFrame here
     linReg = linregress(range(len(x)), x)
 
-    # return [("attr_\"{}\"".format(config["attr"]), getattr(linReg, config["attr"]))
-    #         for config in param]
     return [getattr(linReg, config["attr"])
             for config in param]
 
@@ -1981,7 +1970,6 @@ def cwt_coefficients(x, param):
         else:
             res += [calculated_cwt_for_widths[i, coeff]]
 
-    # return zip(indices, res)
     return res
 
 
@@ -2045,7 +2033,6 @@ def sample_entropy(x):
     N = n * (n - 1) / 2
     B = np.vstack(([N], B[0]))
 
-    # sample entropy = -1 * (log (A/B))
     similarity_ratio = A / B
     se = -1 * np.log(similarity_ratio)
     se = np.reshape(se, -1)
@@ -2234,7 +2221,6 @@ def agg_linear_trend(x, param):
 
 
         res_index.append("f_agg_\"{}\"__chunk_len_{}__attr_\"{}\"".format(f_agg, chunk_len, attr))
-    # return zip(res_index, res_data)
     return res_data
 #
 
@@ -2271,8 +2257,6 @@ def linear_trend_timewise(x, param):
 
     linReg = linregress(times_hours, x.values)
 
-    # return [("attr_\"{}\"".format(config["attr"]), getattr(linReg, config["attr"]))
-    #         for config in param]
     return [getattr(linReg, config["attr"])
             for config in param]
 

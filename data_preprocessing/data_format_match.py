@@ -3,10 +3,7 @@
 
 import time
 import pandas as pd
-
-
-def millisec_to_str(sec):
-    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(sec)))
+from utils import millisec_to_str
 
 def characteristics_format_match(total_dataset):
     # total_dataset.rename(columns={"timestamp":"timestamps", "is_anomaly":"anomaly","point":"value"}, inplace=True)

@@ -7,15 +7,7 @@ Licensed under the BSD 3-Clause License (the "License"); you may not use this fi
 https://opensource.org/licenses/BSD-3-Clause
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 """
-import warnings
-import statistical_features
-import fitting_features
-import classification_features
-# import feature_calculator
-from time_series_detector.common import tsd_common
-from tsfresh import defaults
-from tsfresh.feature_extraction import feature_calculators
-from tsfresh.feature_extraction.settings import ComprehensiveFCParameters
+
 import pandas as pd
 from time_series_detector.common.tsd_common import *
 import feature_service
@@ -26,9 +18,7 @@ from sklearn.feature_selection import VarianceThreshold,SelectFromModel
 def sliding_window(value, window_len,DAY_PNT):
     value_window = []
     value = np.array(value)
-    # DAY_PNT = floor(len(value)/7)
-    # DAY_PNT = 24
-    # DAY_PNT = len(total_dataset.loc[total_dataset['Date'] == total_dataset['Date'].ix[len(total_dataset)/2]])
+
     for i in range(window_len + 7 * DAY_PNT, len(value) + 1):
         xs_c = value[i - window_len - 7 * DAY_PNT: i + window_len - 7 * DAY_PNT]
         xs_b = value[i - window_len - 1 * DAY_PNT: i + window_len - 1 * DAY_PNT]

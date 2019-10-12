@@ -151,3 +151,51 @@ def anomaly_predict_view(dataset):
 
     plt.show()
 
+##应该修改成自动加减时间
+def day_based_changed_proba_predict(target_date1,target_date2, target_date3):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    total_dataset_Date_index = total_dataset
+    total_dataset_Date_index = total_dataset_Date_index.set_index('Date')
+    total_dataset_Date_index.index = pd.DatetimeIndex(total_dataset_Date_index.index)
+
+
+    line_name1 = 'Line_{}'.format(target_date1)
+    line_name2 = 'Line_{}'.format(target_date2)
+    line_name3 = 'Line_{}'.format(target_date3)
+    # yesterday = target_date - datetime.timedelta(days = 1).strftime('%Y-%m-%d')
+    # lastweek = target_date - datetime.timedelta(days = 7).strftime('%Y-%m-%d')
+    line1 = total_dataset_Date_index.loc[target_date1] ##12。24为基准
+    line2 = total_dataset_Date_index.loc[target_date2] ##12。24为基准
+    line3 = total_dataset_Date_index.loc[target_date3] ##12。24为基准
+    ax.plot(line1.Hour_Minute, line1.value, color = 'red',  label=line_name1,alpha = 0.4)
+    ax.plot(line2.Hour_Minute, line2.value, color = 'green',  label=line_name2,alpha = 0.4)
+    ax.plot(line3.Hour_Minute, line3.value, color = 'blue',  label=line_name3,alpha = 0.4)
+    if len(line1.loc[line1['anomaly']== 1])>0:
+        line_anomaly = line1.loc[line1['anomaly']== 1]
+        ax.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red', label='{}'.format(line_name1))
+    if len(line2.loc[line2['anomaly']== 1])>0:
+        line_anomaly = line2.loc[line2['anomaly']== 1]
+        ax.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red', label='{}'.format(line_name2))
+    if len(line3.loc[line3['anomaly']== 1])>0:
+        line_anomaly = line3.loc[line3['anomaly']== 1]
+        ax.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red', label='{}'.format(line_name3))
+
+
+    ax2 = ax.twinx()
+    # lns3 = ax2.plot(line1.Hour_Minute, line1.y_proba_pred_total, label = 'Anomaly Score')
+    # lns = lns1+lns2+lns3
+    # labs = [l.get_label() for l in lns]
+    # ax.legend(lns, labs, bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0)
+    # ax.legend(bbox_to_anchor=(1.0, 0.05), loc=3, borderaxespad=0)
+    ax.legend(loc = 'best')
+    ax2.legend(loc = 'best')
+    plt.xticks(rotation=30)
+    ax.set_xlabel("Time (h)")
+    ax.set_ylabel("Value changed")
+    # ax2.set_ylabel("Probability Anomaly Score")
+    # ax2.set_ylim(0, 1)
+    plt.xticks(rotation = 30)
+    plt.title('{} Day-based Comparison (with yesterday and last week)'.format(target_date1))
+
+    plt.show() ##still in main

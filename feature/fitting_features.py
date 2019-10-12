@@ -8,9 +8,7 @@ https://opensource.org/licenses/BSD-3-Clause
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 """
 
-import numpy as np
 from time_series_detector.common.tsd_common import *
-import pandas as pd
 
 
 
@@ -39,12 +37,6 @@ def time_series_moving_average(x): ########为什么从后开始计算平均值�
 
     a = time_series_moving_average_get_dict(x)
 
-    # temp_list = []
-    # for w in range(1, min(50, DEFAULT_WINDOW), 5):
-    #     temp = np.mean(x[-w:])
-    #     temp_list.append(temp)
-    # a =list(np.array(temp_list) - x[-1])
-    #
     return a
 
 
@@ -73,12 +65,7 @@ def time_series_weighted_moving_average(x):
     :return: the value of this feature
     :return type: list with float
     """
-    # temp_list = []
-    # for w in range(1, min(50, DEFAULT_WINDOW), 5):
-    #     w = min(len(x), w)  # avoid the case len(value_list) < w
-    #     coefficient = np.array(range(1, w + 1))
-    #     temp_list.append((np.dot(coefficient, x[-w:])) / float(w * (w + 1) / 2))
-    # return list(np.array(temp_list) - x[-1])
+
     a = time_series_weighted_moving_average_get_dict(x)
     return a
 
@@ -117,15 +104,7 @@ def time_series_exponential_weighted_moving_average(x):
     :return: the value of this feature
     :return type: list with float
     """
-    # temp_list = []
-    # for j in range(1, 10):
-    #     alpha = j / 10.0
-    #     s = [x[0]]
-    #     for i in range(1, len(x)):
-    #         temp = alpha * x[i] + (1 - alpha) * s[-1]
-    #         s.append(temp)
-    #     temp_list.append(s[-1] - x[-1])
-    # return temp_list
+
     a = time_series_exponential_weighted_moving_average_get_dict(x)
     return a
 
@@ -149,13 +128,7 @@ def time_series_double_exponential_weighted_moving_average_get_dict(x):
                     name = ("statistical_time_series_double_exponential_weighted_moving_average_j1{}_j2{}_i{}".format(j1,j2,i))
                     yield {'{}'.format(name):temp__}
     return list(_f())
-    #
-    #     for w in range(1, min(50, DEFAULT_WINDOW), 5):
-    #         temp = np.mean(x[-w:])
-    #         temp__ = temp - x[-1]
-    #         name = ("time_series_moving_average_{}".format(w))
-    #         yield {'{}'.format(name):temp__}
-    # return list(_f())
+
 
 
 def time_series_double_exponential_weighted_moving_average(x):
@@ -173,20 +146,7 @@ def time_series_double_exponential_weighted_moving_average(x):
     :return: the value of this feature
     :return type: list with float
     """
-    # temp_list = []
-    # for j1 in range(1, 10, 2):
-    #     for j2 in range(1, 10, 2):
-    #         alpha = j1 / 10.0
-    #         gamma = j2 / 10.0
-    #         s = [x[0]]
-    #         b = [(x[3] - x[0]) / 3]  # s is the smoothing part, b is the trend part ######？？？？？？(x[2]-x[0])/3???
-    #         for i in range(1, len(x)):
-    #             temp1 = alpha * x[i] + (1 - alpha) * (s[-1] + b[-1]) ####?????加(s[i-1] + b[i-1])
-    #             s.append(temp1)
-    #             temp2 = gamma * (s[-1] - s[-2]) + (1 - gamma) * b[-1]  ####?????gamma * (s[i-1] - s[i-2]) + (1 - gamma) * b[i-1]
-    #             b.append(temp2)
-    #         temp_list.append(s[-1] - x[-1])
-    # return temp_list
+
 
     a = time_series_double_exponential_weighted_moving_average_get_dict(x)
     return a
@@ -306,7 +266,6 @@ def time_series_periodic_features(data_c_left, data_c_right, data_b_left, data_b
 
     step = DEFAULT_WINDOW / 6
 
-    # for w in range(1, DEFAULT_WINDOW, step):
     for w in range(1, DEFAULT_WINDOW, DEFAULT_WINDOW/6):
         periodic_features.append({"the_difference_between_the_maximum_of_the_subsequence_of_data_a_from_{}_the_last_value_of_today_{}".format(w,w):min(max(data_a[w - 1:w + step]) - data_a[-1], 0)})
         periodic_features.append({"the_difference_between_the_minimum_of_the_subsequence_of_data_a_from_{}_the_last_value_of_today_{}".format(w,w):max(min(data_a[w - 1:w + step]) - data_a[-1], 0)})
