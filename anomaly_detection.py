@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
 import csv
@@ -37,15 +36,10 @@ from data_pre_processing.data_format_match import characteristics_format_match
 from visualize.plot_ts import anomaly_view, plot_hist
 from time_series_detector.feature.features_calculate_select \
     import combine_features_calculate,sliding_window, combine_features_calculate\
-    , features_selected_ExtraTreesClassifier,selected_columns_names, feature_extraction
+    , features_selected_ExtraTreesClassifier,selected_columns_names, feature_extraction,cal_features_based_on_id
 from visualize.plot_forcast_result import Precision_Recall_Curve, plot_auc, anomaly_predict_view\
     , anomaly_score_view_predict, anomaly_score_view_date
-from visualize.plot_stable_view import value_stable_determinate
-
-
-
-
-
+from visualize.plot_stable_view import value_stable_determinate_view
 
 
 ##应该修改成自动加减时间
@@ -143,8 +137,12 @@ def circulation_file_predict_origin_features_select_methods(total_dataset):
     anomaly_view(total_dataset)#观察异常点和整体时序走向
     day_based_changed_proba_predict('2015-01-07','2015-01-06','2014-12-31')
 
-    #特征选择
-    x_features_selected,y_calculate, selected_features_name = feature_extraction(total_dataset,window)
+    ##特征计算
+
+    cal_features_based_on_id()
+
+    # #特征选择
+    # x_features_selected,y_calculate, selected_features_name = feature_extraction(total_dataset,window)
     #在进行数据集 split；从win+7day开始--从win+7day开始的数据集
     new_dataset = total_dataset.iloc[win_sli-1:,:]
     new_dataset = new_dataset.reset_index(drop= True)
@@ -208,40 +206,77 @@ def plot_tree(clf, title="example"):
 ##########################################--- main ----#####################################################################
 if __name__ == "__main__":
 
-
+    #
     # global x_features_selected
     warnings.filterwarnings("ignore")
-    window = 14
-    DEFAULT_WINDOW = 14
-    k = pd.read_csv('data/ydata-labeled-time-series-anomalies-v1_0/A4Benchmark/totoal_file_and_name.csv')
-    k = pd.DataFrame(k)
+    window = 2
+    DEFAULT_WINDOW = 2
+    total_dataset = pd.read_csv('/Users/xumiaochun/jiawei/tmp/selected_data.csv')
     list_to_print = []
-    for i in range(0,len(k)):
-        location = k["location"].ix[i]
-        filename = k["filename"].ix[i]
-        total_dataset = pd.read_csv('{}'.format(location))
-        if i >= 124:
-            total_dataset.rename(columns={"timestamp":"timestamps", "is_anomaly":"anomaly"}, inplace=True)
 
-        total_dataset = characteristics_format_match(total_dataset) #total_dataset中含有两新列----Date和Hour_Minute
-        DAY_PNT = len(total_dataset.loc[total_dataset['Date'] == total_dataset['Date'].ix[len(total_dataset)/2]])
-        lenth_total_dataset = len(total_dataset)
-        win_sli = window + 7 * DAY_PNT
-        lenth_new_dataset = len(total_dataset.ix[win_sli-1:]) #真正有特征值部分的数据集
+    total_dataset.rename(columns={"timestamp":"timestamps", "label":"anomaly","point":"value"}, inplace=True)
 
-        training_data, test_data = train_test_split(total_dataset.ix[win_sli-1:], test_size = 0.3, shuffle=False)
-        train_ = total_dataset.ix[win_sli-1:int(lenth_new_dataset*0.7)+win_sli-1]
-        test_ = total_dataset.ix[int(lenth_new_dataset*0.7)+win_sli-1:]
+    total_dataset = characteristics_format_match(total_dataset) #total_dataset中含有两新列----Date和Hour_Minute
 
-        if win_sli < int(len(total_dataset)*0.3) and len(test_.loc[test_['anomaly'] == 1]) > 0 and len(train_.loc[train_['anomaly'] == 1]) > 0: ####（要加入判断时间序列的分析有没有价值的判断方法）
-            anomaly_view(total_dataset)#观察异常点和整体时序走向 （未进行数据平稳处理前）
-            # #判断序列的平稳性
-            value_stable_determinate(total_dataset)
 
-            total_dataset= model_makesense_determinate (total_dataset)
+    # anomaly_view(total_dataset)#观察异常点和整体时序走向 （未进行数据平稳处理前）
+    # #判断序列的平稳性
+    # value_stable_determinate_view(total_dataset)
 
-            list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
+    # total_dataset= model_makesense_determinate (total_dataset)
 
-            break ##只跑一个数据集
-            #
-            #
+    # list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
+    selected_id = np.unique(total_dataset.line_id)
+
+    new_dataset = []
+    calculate_features = []
+    label = []
+    for j in range(0,len(selected_id)):
+        id_name = selected_id[j]
+        id_dataset = total_dataset[total_dataset['line_id'] == id_name]
+        new_dataset1 = cal_features_based_on_id(id_dataset,window,id_name)
+        new_dataset.append(new_dataset1)
+
+    new_dataset = pd.concat(new_dataset)
+    # print new_dataset
+
+
+
+    #
+    # #
+    # # global x_features_selected
+    # warnings.filterwarnings("ignore")
+    # window = 14
+    # DEFAULT_WINDOW = 14
+    # k = pd.read_csv('data/ydata-labeled-time-series-anomalies-v1_0/A4Benchmark/totoal_file_and_name.csv')
+    # k = pd.DataFrame(k)
+    # list_to_print = []
+    # for i in range(0,len(k)):
+    #     location = k["location"].ix[i]
+    #     filename = k["filename"].ix[i]
+    #     total_dataset = pd.read_csv('{}'.format(location))
+    #     if i >= 124:
+    #         total_dataset.rename(columns={"timestamp":"timestamps", "is_anomaly":"anomaly"}, inplace=True)
+    #
+    #     total_dataset = characteristics_format_match(total_dataset) #total_dataset中含有两新列----Date和Hour_Minute
+    #     DAY_PNT = len(total_dataset.loc[total_dataset['Date'] == total_dataset['Date'].ix[len(total_dataset)/2]])
+    #     lenth_total_dataset = len(total_dataset)
+    #     win_sli = window + 7 * DAY_PNT
+    #     lenth_new_dataset = len(total_dataset.ix[win_sli-1:]) #真正有特征值部分的数据集
+    #
+    #     training_data, test_data = train_test_split(total_dataset.ix[win_sli-1:], test_size = 0.3, shuffle=False)
+    #     train_ = total_dataset.ix[win_sli-1:int(lenth_new_dataset*0.7)+win_sli-1]
+    #     test_ = total_dataset.ix[int(lenth_new_dataset*0.7)+win_sli-1:]
+    #
+    #     if win_sli < int(len(total_dataset)*0.3) and len(test_.loc[test_['anomaly'] == 1]) > 0 and len(train_.loc[train_['anomaly'] == 1]) > 0: ####（要加入判断时间序列的分析有没有价值的判断方法）
+    #         anomaly_view(total_dataset)#观察异常点和整体时序走向 （未进行数据平稳处理前）
+    #         # #判断序列的平稳性
+    #         value_stable_determinate(total_dataset)
+    #
+    #         total_dataset= model_makesense_determinate (total_dataset)
+    #
+    #         list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
+    #
+    #         break ##只跑一个数据集
+
+

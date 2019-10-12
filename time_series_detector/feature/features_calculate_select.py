@@ -38,10 +38,10 @@ def sliding_window(value, window_len,DAY_PNT):
 
     return value_window
     
-def combine_features_calculate (data, window):#####汇合了metis和tsfresh
+def combine_features_calculate (data, window,DAY_PNT):#####汇合了metis和tsfresh
     features = []
     label = []
-    DAY_PNT = len(data.loc[data['Date'] == data['Date'].ix[len(data)/2]])
+    # DAY_PNT = len(data.loc[data['Date'] == data['Date'].ix[len(data)/2]])
     sliding_arrays = sliding_window(data.value, window_len=window,DAY_PNT = DAY_PNT)
 
     for ith, arr in enumerate(sliding_arrays):
@@ -131,3 +131,24 @@ def feature_extraction(total_dataset,window):
     selected_features_name, x_features_selected = selected_columns_names(x_features_calculate, x_features_selected)
     # print x_features_selected.columns.tolist()
     return x_features_selected, y_calculate, selected_features_name
+
+def cal_features_based_on_id(id_dataset,window,id_name):
+    ##先进行特征计算
+    # x_features_calculate,y_calculate = combine_features_calculate (id_dataset, window,DAY_PNT)
+    #再进行特征选择
+    calculate_features = []
+    label = []
+    id_dataset = id_dataset.reset_index(drop=True)
+    DAY_PNT = len(id_dataset.loc[id_dataset['Date'] == id_dataset['Date'].ix[len(id_dataset)/2]])
+    win_sli = window + 7 * DAY_PNT
+    x_features_calculate,y_calculate = combine_features_calculate (id_dataset, window,DAY_PNT)
+    x_features_calculate["id"] = id_name
+    calculate_features.append([x_features_calculate])
+    label.append([y_calculate])
+
+    calculate_features = pd.concat([x_features_calculate])
+    label = pd.concat([y_calculate])
+    label= label.reset_index(drop = True)
+    new_dataset1 = pd.concat([calculate_features,label],axis=1)
+
+    return new_dataset1
