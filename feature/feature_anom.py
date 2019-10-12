@@ -8,10 +8,9 @@ https://opensource.org/licenses/BSD-3-Clause
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 """
 from __future__ import absolute_import, division
-import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators
-import time_series_detector.feature.feature_calculators_withoutparam as ts_feature_calculators_without_param
 import warnings
-from time_series_detector.feature.setting import ComprehensiveFCParameters
+
+import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators
 
 
 def time_series_maximum(x):
