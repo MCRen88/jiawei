@@ -207,7 +207,7 @@ def calculate_all_features(time_series, window):
 
     # spilt time_series
     split_time_series = tsd_common.split_time_series(time_series, window)
-    split_time_series2 = tsd_common.split_time_series2(time_series, window)
+    # split_time_series2 = tsd_common.split_time_series2(time_series, window)
 
     # nomalize time_series
     normalized_split_time_series = tsd_common.normalize_time_series(split_time_series)

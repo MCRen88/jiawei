@@ -105,6 +105,26 @@ def extract_features_without_param(time_series, window):
     # features = c_features
     return features
 
+
+
+
+import pandas as pd
+from numpy.linalg import LinAlgError
+from scipy.signal import cwt, find_peaks_cwt, ricker, welch
+from scipy.stats import linregress
+from statsmodels.tools.sm_exceptions import MissingDataError
+from statsmodels.tsa.ar_model import AR
+from statsmodels.tsa.stattools import acf, adfuller, pacf
+
+import numpy as np
+import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators
+from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_series
+# from statistical_features import time_series_mean, time_series_variance, time_series_standard_deviation, time_series_median
+
+
+
+
+
 def calculate_all_features(time_series, window):
     # type: (object, object) -> object
     # type: (object, object) -> object
@@ -122,10 +142,12 @@ def calculate_all_features(time_series, window):
     # nomalize time_series
     normalized_split_time_series = tsd_common.normalize_time_series(split_time_series)
     max_min_normalized_time_series = tsd_common.normalize_time_series_by_max_min(split_time_series)
+    s_features_with_parameter1 = statistical_features.get_parameters_features(max_min_normalized_time_series)
+
     # s_features = statistical_features.get_statistical_features(normalized_split_time_series[4])
     # c_features = classification_features.get_classification_features(max_min_normalized_time_series)
     # f_features = fitting_features.get_fitting_features(normalized_split_time_series)
-    s_features_with_parameter1 = statistical_features.get_parameters_features(max_min_normalized_time_series)
+    # s_features_with_parameter1 = statistical_features.get_parameters_features(max_min_normalized_time_series)
 
     # features = s_features + c_features + f_features + s_features_with_parameter1
     features = s_features_with_parameter1

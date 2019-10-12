@@ -190,7 +190,7 @@ class ComprehensiveFCParameters(dict):
             # "index_mass_quantile": [{"q": q} for q in [.1, .2, .3, .4, .6, .7, .8, .9]],
             # "cwt_coefficients": [{"widths": width, "coeff": coeff, "w": w} for
             #                      width in [(2, 5, 10, 20)] for coeff in range(15) for w in (2, 5, 10, 20)],
-            # "spkt_welch_density": [{"coeff": coeff} for coeff in [2, 5, 8]],
+            "spkt_welch_density": [{"coeff": coeff} for coeff in [2, 5, 8]],
             # "ar_coefficient": [{"coeff": coeff, "k": k} for coeff in range(5) for k in [10]],
             # "change_quantiles": [{"ql": ql, "qh": qh, "isabs": b, "f_agg": f}
             #                      for ql in [0., .2, .4, .6, .8] for qh in [.2, .4, .6, .8, 1.]

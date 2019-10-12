@@ -323,11 +323,11 @@ def time_series_periodic_features(data_c_left, data_c_right, data_b_left, data_b
 def get_fitting_features(x_list):
     fitting_features = []
     fitting_features.extend(time_series_moving_average(x_list[4]))
-    fitting_features.extend(time_series_weighted_moving_average(x_list[4]))
-    fitting_features.extend(time_series_exponential_weighted_moving_average(x_list[4]))
-    fitting_features.extend(time_series_double_exponential_weighted_moving_average(x_list[4]))
-
-    fitting_features.extend(time_series_periodic_features(x_list[0], x_list[1], x_list[2], x_list[3], x_list[4]))
+    # fitting_features.extend(time_series_weighted_moving_average(x_list[4]))
+    # fitting_features.extend(time_series_exponential_weighted_moving_average(x_list[4]))
+    # fitting_features.extend(time_series_double_exponential_weighted_moving_average(x_list[4]))
+    #
+    # fitting_features.extend(time_series_periodic_features(x_list[0], x_list[1], x_list[2], x_list[3], x_list[4]))
     # append yourself fitting features here...
 
     return fitting_features

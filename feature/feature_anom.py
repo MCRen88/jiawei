@@ -4,10 +4,15 @@
 
 from __future__ import absolute_import, division
 
-import numpy as np
-import pandas as pd
-import warnings
 from builtins import range
+import pandas as pd
+from scipy.signal import  find_peaks_cwt, ricker
+from scipy.stats import linregress
+
+
+# todo: make sure '_' works in parameter names in all cases, add a warning if not
+
+import numpy as np
 from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_series
 
 
@@ -33,22 +38,52 @@ __all__ = ["time_series_moving_average",
 
 
 
-
 def _roll(a, shift):
+    """
+    Roll 1D array elements. Improves the performance of numpy.roll() by reducing the overhead introduced from the
+    flexibility of the numpy.roll() method such as the support for rolling over multiple dimensions.
+
+    Elements that roll beyond the last position are re-introduced at the beginning. Similarly, elements that roll
+    back beyond the first position are re-introduced at the end (with negative shift).
+
+    Examples
+    --------
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> _roll(x, shift=2)
+    # >>> array([8, 9, 0, 1, 2, 3, 4, 5, 6, 7])
+    #
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> _roll(x, shift=-2)
+    # >>> array([2, 3, 4, 5, 6, 7, 8, 9, 0, 1])
+    #
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> _roll(x, shift=12)
+    # >>> array([8, 9, 0, 1, 2, 3, 4, 5, 6, 7])
+
+    Benchmark
+    ---------
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> %timeit _roll(x, shift=2)
+    # >>> 1.89 µs ± 341 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+    #
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> %timeit np.roll(x, shift=2)
+    # >>> 11.4 µs ± 776 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+
+    :param a: the input array
+    :type a: array_like
+    :param shift: the number of places by which elements are shifted
+    :type shift: int
+
+    :return: shifted array with the same shape as a
+    :return type: ndarray
+    """
     if not isinstance(a, np.ndarray):
         a = np.asarray(a)
     idx = shift % len(a)
     return np.concatenate([a[-idx:], a[:-idx]])
 
 
-def time_series_moving_average_get_dict(x):
-    def _f():
-        for w in range(1, min(50, DEFAULT_WINDOW), 5):
-            temp = np.mean(x[-w:])
-            temp__ = temp - x[-1]
-            name = ("statistical_time_series_moving_average_{}".format(w))
-            yield {'{}'.format(name):temp__}
-    return list(_f())
 
 def time_series_moving_average(x): ########为什么从后开始计算平均值？？？？
     """
@@ -64,18 +99,15 @@ def time_series_moving_average(x): ########为什么从后开始计算平均值�
     :return type: list with float
     """
 
-    a = time_series_moving_average_get_dict(x)
-    return a
+    list = []
+    for w in range(1, min(50, DEFAULT_WINDOW), 5):
+        temp = np.mean(x[-w:])
+        temp__ = temp - x[-1]
+        name = ("statistical_time_series_moving_average_{}".format(w))
+        list.append({'{}'.format(name):temp__})
 
-def time_series_weighted_moving_average_get_dict(x):
-    def _f():
-        for w in range(1, min(50, DEFAULT_WINDOW), 5):
-            w = min(len(x), w)
-            coefficient = np.array(range(1, w + 1))
-            temp__ = ((np.dot(coefficient, x[-w:])) / float(w * (w + 1) / 2)) - x[-1]
-            name = ("statistical_time_series_weighted_moving_average_{}".format(w))
-            yield {'{}'.format(name):temp__}
-    return list(_f())
+    return list
+
 
 def time_series_weighted_moving_average(x):
     """
@@ -91,22 +123,14 @@ def time_series_weighted_moving_average(x):
     :return type: list with float
     """
 
-    a = time_series_weighted_moving_average_get_dict(x)
-    return a
-
-def time_series_exponential_weighted_moving_average_get_dict(x):
-    def _f():
-        for j in range(1, 10):
-            alpha = j / 10.0
-            s = [x[0]]
-            for i in range(1, len(x)):
-                temp = alpha * x[i] + (1 - alpha) * s[-1]
-                s.append(temp)
-                temp__ = s[-1] - x[-1]
-                name = ("statistical_time_series_exponential_weighted_moving_average_j{}_i{}".format(j,i))
-                yield {'{}'.format(name):temp__}
-    return list(_f())
-
+    list = []
+    for w in range(1, min(50, DEFAULT_WINDOW), 5):
+        w = min(len(x), w)
+        coefficient = np.array(range(1, w + 1))
+        temp__ = ((np.dot(coefficient, x[-w:])) / float(w * (w + 1) / 2)) - x[-1]
+        name = ("statistical_time_series_weighted_moving_average_{}".format(w))
+        list.append({'{}'.format(name):temp__})
+    return list
 
 
 def time_series_exponential_weighted_moving_average(x):
@@ -123,29 +147,18 @@ def time_series_exponential_weighted_moving_average(x):
     :return type: list with float
     """
 
-    a = time_series_exponential_weighted_moving_average_get_dict(x)
-    return a
+    list = []
+    for j in range(1, 10):
+        alpha = j / 10.0
+        s = [x[0]]
+        for i in range(1, len(x)):
+            temp = alpha * x[i] + (1 - alpha) * s[-1]
+            s.append(temp)
+            temp__ = s[-1] - x[-1]
+            name = ("statistical_time_series_exponential_weighted_moving_average_j{}_i{}".format(j,i))
+            list.append({'{}'.format(name):temp__})
+    return list
 
-
-
-
-def time_series_double_exponential_weighted_moving_average_get_dict(x):
-    def _f():
-        for j1 in range(1, 10, 2):
-            for j2 in range(1, 10, 2):
-                alpha = j1 / 10.0
-                gamma = j2 / 10.0
-                s = [x[0]]
-                b = [(x[3] - x[0]) / 3]  # s is the smoothing part, b is the trend part ######？？？？？？(x[2]-x[0])/3???
-                for i in range(1, len(x)):
-                    temp1 = alpha * x[i] + (1 - alpha) * (s[-1] + b[-1]) ####?????加(s[i-1] + b[i-1])
-                    s.append(temp1)
-                    temp2 = gamma * (s[-1] - s[-2]) + (1 - gamma) * b[-1]  ####?????gamma * (s[i-1] - s[i-2]) + (1 - gamma) * b[i-1]
-                    b.append(temp2)
-                    temp__ = s[-1] - x[-1]
-                    name = ("statistical_time_series_double_exponential_weighted_moving_average_j1{}_j2{}_i{}".format(j1,j2,i))
-                    yield {'{}'.format(name):temp__}
-    return list(_f())
 
 
 
@@ -164,14 +177,22 @@ def time_series_double_exponential_weighted_moving_average(x):
     :return: the value of this feature
     :return type: list with float
     """
-
-
-    a = time_series_double_exponential_weighted_moving_average_get_dict(x)
-    return a
-
-
-
-
+    list = []
+    for j1 in range(1, 10, 2):
+        for j2 in range(1, 10, 2):
+            alpha = j1 / 10.0
+            gamma = j2 / 10.0
+            s = [x[0]]
+            b = [(x[3] - x[0]) / 3]  # s is the smoothing part, b is the trend part ######？？？？？？(x[2]-x[0])/3???
+            for i in range(1, len(x)):
+                temp1 = alpha * x[i] + (1 - alpha) * (s[-1] + b[-1]) ####?????加(s[i-1] + b[i-1])
+                s.append(temp1)
+                temp2 = gamma * (s[-1] - s[-2]) + (1 - gamma) * b[-1]  ####?????gamma * (s[i-1] - s[i-2]) + (1 - gamma) * b[i-1]
+                b.append(temp2)
+                temp__ = s[-1] - x[-1]
+                name = ("statistical_time_series_double_exponential_weighted_moving_average_j1{}_j2{}_i{}".format(j1,j2,i))
+                list.append({'{}'.format(name):temp__})
+    return list
 
 
 
@@ -205,10 +226,8 @@ def time_series_periodic_features(data_c_left, data_c_right, data_b_left, data_b
     periodic_features.append({"abs_between_today_and_a_week_ago":abs(temp_value)})
     if temp_value < 0:
         a = -1
-        # periodic_features.append(-1)
     else:
         a =1
-        # periodic_features.append(1)
     periodic_features.append({"absolute_value_of_today_and_a_week_ago":a})
 
     temp_value = data_b_left[-1] - data_a[-1]
@@ -259,7 +278,6 @@ def time_series_periodic_features(data_c_left, data_c_right, data_b_left, data_b
         periodic_features.append({"abs_of_mean_values_between_data_c_left_and_data_a_lenth_{}".format(w):abs(temp_value)})
         if temp_value < 0:
             a = -1
-            # periodic_features.append(-1)
         else:
             a = 1
         periodic_features.append({"data_c_left_mean_larger_than_data_a_mean_lenth_{}".format(w):a})
@@ -323,7 +341,6 @@ def binned_entropy(x, max_bins):
     probs = hist / x.size
     return - np.sum(p * np.math.log(p) for p in probs if p != 0)
 
-@set_property("fctype", "simple")
 def quantile(x, q):
     """
     Calculates the q quantile of x. This is the value of x greater than q% of the ordered values from x.
@@ -383,49 +400,6 @@ def change_quantiles(x, ql, qh, isabs, f_agg):
         aggregator = getattr(np, f_agg)
         return aggregator(div[ind_inside_corridor])
 
-def change_quantiles(x, ql, qh, isabs, f_agg):
-    """
-    First fixes a corridor given by the quantiles ql and qh of the distribution of x.
-    Then calculates the average, absolute value of consecutive changes of the series x inside this corridor.
-
-    Think about selecting a corridor on the
-    y-Axis and only calculating the mean of the absolute change of the time series inside this corridor.
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :param ql: the lower quantile of the corridor
-    :type ql: float
-    :param qh: the higher quantile of the corridor
-    :type qh: float
-    :param isabs: should the absolute differences be taken?
-    :type isabs: bool
-    :param f_agg: the aggregator function that is applied to the differences in the bin
-    :type f_agg: str, name of a numpy function (e.g. mean, var, std, median)
-
-    :return: the value of this feature
-    :return type: float
-    """
-    if ql >= qh:
-        ValueError("ql={} should be lower than qh={}".format(ql, qh))
-
-    div = np.diff(x)
-    if isabs:
-        div = np.abs(div)
-    # All values that originate from the corridor between the quantiles ql and qh will have the category 0,
-    # other will be np.NaN
-    try:
-        bin_cat = pd.qcut(x, [ql, qh], labels=False)
-        bin_cat_0 = bin_cat == 0
-    except ValueError:  # Occurs when ql are qh effectively equal, e.g. x is not long enough or is too categorical
-        return 0
-    # We only count changes that start and end inside the corridor
-    ind = (bin_cat_0 & _roll(bin_cat_0, 1))[1:]
-    if sum(ind) == 0:
-        return 0
-    else:
-        ind_inside_corridor = np.where(ind == 1)
-        aggregator = getattr(np, f_agg)
-        return aggregator(div[ind_inside_corridor])
 
 def number_crossing_m(x, m):
     """
@@ -483,7 +457,6 @@ def energy_ratio_by_chunks(x, param):
         res_index.append("num_segments_{}__segment_focus_{}".format(num_segments, segment_focus))
 
     res_data = np.array(res_data)
-    # return list(zip(res_index, res_data)) # Materialize as list for Python 3 compatibility with name handling
     return res_data # Materialize as list for Python 3 compatibility with name handling
 
 
@@ -523,9 +496,23 @@ def energy_ratio_by_chunks(x, param):
         res_index.append("num_segments_{}__segment_focus_{}".format(num_segments, segment_focus))
 
     res_data = np.array(res_data)
-    # return list(zip(res_index, res_data)) # Materialize as list for Python 3 compatibility with name handling
     return res_data # Materialize as list for Python 3 compatibility with name handling
 
+def _aggregate_on_chunks(x, f_agg, chunk_len):
+    """
+    Takes the time series x and constructs a lower sampled version of it by applying the aggregation function f_agg on
+    consecutive chunks of length chunk_len
+
+    :param x: the time series to calculate the aggregation of
+    :type x: numpy.ndarray
+    :param f_agg: The name of the aggregation function that should be an attribute of the pandas.Series
+    :type f_agg: str
+    :param chunk_len: The size of the chunks where to aggregate the time series
+    :type chunk_len: int
+    :return: A list of the aggregation function over the chunks
+    :return type: list
+    """
+    return [getattr(x[i * chunk_len: (i + 1) * chunk_len], f_agg)() for i in range(int(np.ceil(len(x) / chunk_len)))]
 
 def agg_linear_trend(x, param):
     """
@@ -582,7 +569,6 @@ def agg_linear_trend(x, param):
 
         res_index.append("f_agg_\"{}\"__chunk_len_{}__attr_\"{}\"".format(f_agg, chunk_len, attr))
     return res_data
-#
 
 
 

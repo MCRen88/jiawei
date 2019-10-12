@@ -596,15 +596,9 @@ def spkt_welch_density(x, param):
                                        if coefficient not in reduced_coeff]
 
         # Fill up the rest of the requested coefficients with np.NaNs
-        # return zip(indices, list(pxx[reduced_coeff]) + [np.NaN] * len(not_calculated_coefficients))
-        return zip(list(pxx[reduced_coeff]) + [np.NaN] * len(not_calculated_coefficients))
-
+        return list(pxx[reduced_coeff]) + [np.NaN] * len(not_calculated_coefficients)
     else:
-        # return zip(indices, pxx[coeff])
-        t = pxx[[config["coeff"] for config in param]]
-
-        return t
-
+        return list(pxx[coeff])
 
 
 

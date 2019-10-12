@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+
 import numpy as np
 import pandas as pd
 from numpy.linalg import LinAlgError
@@ -14,7 +18,7 @@ from statsmodels.tsa.stattools import acf, adfuller, pacf
 # from tsfresh.feature_extraction import feature_calculators
 
 from time_series_detector.feature.setting import ComprehensiveFCParameters
-from time_series_detector.feature import feature_calculators
+# from time_series_detector.feature import feature_calculators
 ####
 
 
@@ -1830,9 +1834,9 @@ def spkt_welch_density(x, param):
                                        if coefficient not in reduced_coeff]
 
         # Fill up the rest of the requested coefficients with np.NaNs
-        return zip(indices, list(pxx[reduced_coeff]) + [np.NaN] * len(not_calculated_coefficients))
+        return list(pxx[reduced_coeff]) + [np.NaN] * len(not_calculated_coefficients)
     else:
-        return zip(indices, pxx[coeff])
+        return list(pxx[coeff])
 
 
 @set_property("fctype", "combiner")

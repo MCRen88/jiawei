@@ -31,8 +31,8 @@ from sklearn.model_selection import train_test_split
 from time_series_detector.algorithm.gbdt import *
 import time_series_detector.algorithm.gbdt
 # from sklearn.cross_validation import train_test_split
-from data_pre_processing.stable_random_test import model_makesense_determinate
-from data_pre_processing.data_format_match import characteristics_format_match
+# from data_pre_processing.stable_random_test import model_makesense_determinate
+from data_preprocessing.data_format_match import characteristics_format_match
 from visualize.plot_ts import anomaly_view, plot_hist
 from feature.features_calculate_select \
     import combine_features_calculate,sliding_window, combine_features_calculate\
@@ -160,8 +160,8 @@ if __name__ == "__main__":
     #
     # global x_features_selected
     warnings.filterwarnings("ignore")
-    window = 2
-    DEFAULT_WINDOW = 2
+    window = 14
+    # DEFAULT_WINDOW = 2
     total_dataset = pd.read_csv('/Users/xumiaochun/jiawei/tmp/selected_data.csv')
     list_to_print = []
     total_dataset.rename(columns={"timestamp":"timestamps", "label":"anomaly","point":"value"}, inplace=True)

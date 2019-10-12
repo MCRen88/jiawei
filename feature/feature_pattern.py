@@ -7,12 +7,20 @@ Licensed under the BSD 3-Clause License (the "License"); you may not use this fi
 https://opensource.org/licenses/BSD-3-Clause
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 """
-
+import itertools
+import warnings
 import numpy as np
-import pandas as pd
 import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators
 from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_series
 from statistical_features import time_series_mean, time_series_variance, time_series_standard_deviation, time_series_median
+from builtins import range
+import pandas as pd
+from numpy.linalg import LinAlgError
+from scipy.signal import cwt, ricker, welch
+from scipy.stats import linregress
+from statsmodels.tsa.ar_model import AR
+from statsmodels.tsa.stattools import acf, pacf
+
 
 __all__ = [	"time_series_autocorrelation",
                "time_series_coefficient_of_variation",
@@ -33,14 +41,52 @@ __all__ = [	"time_series_autocorrelation",
                "c3",
                "spkt_welch_density",
                "linear_trend",
-                "linear_trend_timewise",
-                "fft_coefficient"
+                "linear_trend_timewise"
+
 ]
 
 
 
-
 def _roll(a, shift):
+    """
+    Roll 1D array elements. Improves the performance of numpy.roll() by reducing the overhead introduced from the
+    flexibility of the numpy.roll() method such as the support for rolling over multiple dimensions.
+
+    Elements that roll beyond the last position are re-introduced at the beginning. Similarly, elements that roll
+    back beyond the first position are re-introduced at the end (with negative shift).
+
+    Examples
+    --------
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> _roll(x, shift=2)
+    # >>> array([8, 9, 0, 1, 2, 3, 4, 5, 6, 7])
+    #
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> _roll(x, shift=-2)
+    # >>> array([2, 3, 4, 5, 6, 7, 8, 9, 0, 1])
+    #
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> _roll(x, shift=12)
+    # >>> array([8, 9, 0, 1, 2, 3, 4, 5, 6, 7])
+
+    Benchmark
+    ---------
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> %timeit _roll(x, shift=2)
+    # >>> 1.89 µs ± 341 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+    #
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> %timeit np.roll(x, shift=2)
+    # >>> 11.4 µs ± 776 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+
+    :param a: the input array
+    :type a: array_like
+    :param shift: the number of places by which elements are shifted
+    :type shift: int
+
+    :return: shifted array with the same shape as a
+    :return type: ndarray
+    """
     if not isinstance(a, np.ndarray):
         a = np.asarray(a)
     idx = shift % len(a)
@@ -89,14 +135,6 @@ def time_series_coefficient_of_variation(x):
     return np.mean(x) / np.sqrt(np.var(x))
 
 
-def time_series_binned_entropy_get_dict(x):
-    def _f():
-        max_bins = [2, 4, 6, 8, 10, 20]
-        for value in max_bins:
-            temp__ = ts_feature_calculators.binned_entropy(x, value)
-            name = ("time_series_binned_entropy_max_bins_{}".format(value))
-            yield {'{}'.format(name):temp__}
-    return list(_f())
 
 def time_series_binned_entropy(x):
     """
@@ -116,23 +154,14 @@ def time_series_binned_entropy(x):
     :return: the value of this feature
     :return type: float
     """
-    # max_bins = [2, 4, 6, 8, 10, 20]
-    # result = []
-    # for value in max_bins:
-    #     result.append(ts_feature_calculators.binned_entropy(x, value))
-    # return result
-    a = time_series_binned_entropy_get_dict(x)
-    return a
+    list = []
+    max_bins = [2, 4, 6, 8, 10, 20]
+    for value in max_bins:
+        temp__ = ts_feature_calculators.binned_entropy(x, value)
+        name = ("time_series_binned_entropy_max_bins_{}".format(value))
+        list.append({'{}'.format(name): temp__})
+    return list
 
-
-def time_series_value_distribution_get_dict(x):
-    def _f():
-        thresholds = [0, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99, 1.0, 1.0]
-        bins=thresholds
-        temp__ = list(np.histogram(x, bins=thresholds)[0] / float(len(x)))
-        name = ("time_series_value_distribution_{}".format(bins))
-        yield {'{}'.format(name):temp__}
-    return list(_f())
 
 
 
@@ -219,36 +248,6 @@ def time_series_daily_parts_value_distribution_with_threshold(x):
     return features
 
 
-
-
-
-def time_series_window_parts_value_distribution_with_threshold_get_dict(x):
-    def _f():
-        threshold = 0.01
-        split_value_list = split_time_series(x, DEFAULT_WINDOW)
-
-        count_list = []
-        a = 0
-        for value_list in split_value_list:
-            nparray_threshold = np.array(value_list)
-            nparray_threshold[nparray_threshold < threshold] = -1
-            temp = (nparray_threshold == -1).sum()
-            count_list.append((nparray_threshold == -1).sum())
-            name = ("time_series_window_parts_value_distribution_with_threshold_{}".format(a))
-            a =a+1
-            if sum(count_list) == 0:
-                # features = [0, 0, 0, 0, 0]
-                features = [{'time_series_window_parts_value_distribution_with_threshold_Ais0':0}, {'time_series_window_parts_value_distribution_with_threshold_bis0':0}, {'time_series_window_parts_value_distribution_with_threshold_cis0':0}, {'time_series_window_parts_value_distribution_with_threshold_Dis0':0}, {'time_series_window_parts_value_distribution_with_threshold_Eis0':0}]
-
-            else:
-                features = temp/float((DEFAULT_WINDOW + 1))
-                # list(np.array(count_list) / float((DEFAULT_WINDOW + 1)))
-            yield {'{}'.format(name):features}
-    return list(_f())
-
-
-
-
 def time_series_window_parts_value_distribution_with_threshold(x):
     """
     Split the whole time series into five parts.
@@ -260,36 +259,32 @@ def time_series_window_parts_value_distribution_with_threshold(x):
     :return: 5 values of this feature
     :return type: list
     """
+    list = []
+    threshold = 0.01
+    split_value_list = split_time_series(x, DEFAULT_WINDOW)
 
+    count_list = []
+    a = 0
+    for value_list in split_value_list:
+        nparray_threshold = np.array(value_list)
+        nparray_threshold[nparray_threshold < threshold] = -1
+        temp = (nparray_threshold == -1).sum()
+        count_list.append((nparray_threshold == -1).sum())
+        name = ("time_series_window_parts_value_distribution_with_threshold_{}".format(a))
+        a = a + 1
+        if sum(count_list) == 0:
+            features = [{'time_series_window_parts_value_distribution_with_threshold_Ais0': 0},
+                        {'time_series_window_parts_value_distribution_with_threshold_bis0': 0},
+                        {'time_series_window_parts_value_distribution_with_threshold_cis0': 0},
+                        {'time_series_window_parts_value_distribution_with_threshold_Dis0': 0},
+                        {'time_series_window_parts_value_distribution_with_threshold_Eis0': 0}]
 
-    a = time_series_window_parts_value_distribution_with_threshold_get_dict(x)
-    a = pd.DataFrame(a)
-    return a
+        else:
+            features = temp / float((DEFAULT_WINDOW + 1))
+        list.append({'{}'.format(name): features})
 
+    return list
 
-# add yourself classification features here...
-
-
-def get_classification_features(x):
-    classification_features =[
-        {"time_series_mean_classification":time_series_mean(x)},
-        {"time_series_variance_classification":time_series_variance(x)},
-        {"time_series_standard_deviation_classification":time_series_standard_deviation(x)},
-        {"time_series_median_classification":time_series_median(x)},
-        {"time_series_autocorrelation_classification":time_series_autocorrelation(x)},
-        {"time_series_coefficient_of_variation_classification":time_series_coefficient_of_variation(x)},
-    ]
-    classification_features.extend(time_series_value_distribution(x))
-    classification_features.extend(time_series_daily_parts_value_distribution(x))
-
-
-
-    classification_features.extend(time_series_daily_parts_value_distribution_with_threshold(x))
-    # classification_features.extend(time_series_window_parts_value_distribution_with_threshold(x))
-    classification_features.extend(time_series_binned_entropy(x))
-    # add yourself classification features here...
-
-    return classification_features
 
 def approximate_entropy(x, m, r):
     """
@@ -473,11 +468,6 @@ def fft_coefficient(x, param):
         elif agg == "angle":
             return np.angle(x, deg=True)
 
-    res = [complex_agg(fft[config["coeff"]], config["attr"]) if config["coeff"] < len(fft)
-           else np.NaN for config in param]
-    index = ['coeff_{}__attr_"{}"'.format(config["coeff"], config["attr"]) for config in param]
-    # return zip(index, res)
-    # return zip(res)
     return (complex_agg(fft[config["coeff"]], config["attr"]) if config["coeff"] < len(fft)
             else np.NaN for config in param)
 
@@ -684,8 +674,6 @@ def symmetry_looking(x, param):
         x = np.asarray(x)
     mean_median_difference = np.abs(np.mean(x) - np.median(x))
     max_min_difference = np.max(x) - np.min(x)
-    # return [("r_{}".format(r["r"]), mean_median_difference < (r["r"] * max_min_difference))
-    #         for r in param]
     return [(mean_median_difference < (r["r"] * max_min_difference))
             for r in param]
 
@@ -795,12 +783,9 @@ def spkt_welch_density(x, param):
                                        if coefficient not in reduced_coeff]
 
         # Fill up the rest of the requested coefficients with np.NaNs
-        return zip(list(pxx[reduced_coeff]) + [np.NaN] * len(not_calculated_coefficients))
-
+        return list(pxx[reduced_coeff]) + [np.NaN] * len(not_calculated_coefficients)
     else:
-        t = pxx[[config["coeff"] for config in param]]
-
-        return t
+        return list(pxx[coeff])
 
 
 def linear_trend(x, param):
@@ -857,48 +842,4 @@ def linear_trend_timewise(x, param):
 
     return [getattr(linReg, config["attr"])
             for config in param]
-def fft_coefficient(x, param):
-    """
-    Calculates the fourier coefficients of the one-dimensional discrete Fourier Transform for real input by fast
-    fourier transformation algorithm
-
-    .. math::
-        A_k =  \\sum_{m=0}^{n-1} a_m \\exp \\left \\{ -2 \\pi i \\frac{m k}{n} \\right \\}, \\qquad k = 0,
-        \\ldots , n-1.
-
-    The resulting coefficients will be complex, this feature calculator can return the real part (attr=="real"),
-    the imaginary part (attr=="imag), the absolute value (attr=""abs) and the angle in degrees (attr=="angle).
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :param param: contains dictionaries {"coeff": x, "attr": s} with x int and x >= 0, s str and in ["real", "imag",
-        "abs", "angle"]
-    :type param: list
-    :return: the different feature values
-    :return type: pandas.Series
-    """
-
-    assert min([config["coeff"] for config in param]) >= 0, "Coefficients must be positive or zero."
-    assert set([config["attr"] for config in param]) <= set(["imag", "real", "abs", "angle"]), \
-        'Attribute must be "real", "imag", "angle" or "abs"'
-
-    fft = np.fft.rfft(x)
-
-    def complex_agg(x, agg):
-        if agg == "real":
-            return x.real
-        elif agg == "imag":
-            return x.imag
-        elif agg == "abs":
-            return np.abs(x)
-        elif agg == "angle":
-            return np.angle(x, deg=True)
-
-    res = [complex_agg(fft[config["coeff"]], config["attr"]) if config["coeff"] < len(fft)
-           else np.NaN for config in param]
-    index = ['coeff_{}__attr_"{}"'.format(config["coeff"], config["attr"]) for config in param]
-    # return zip(index, res)
-    # return zip(res)
-    return (complex_agg(fft[config["coeff"]], config["attr"]) if config["coeff"] < len(fft)
-            else np.NaN for config in param)
 

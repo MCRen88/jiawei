@@ -62,6 +62,45 @@ __all__ = [ "time_series_maximum",
 
 
 def _roll(a, shift):
+    """
+    Roll 1D array elements. Improves the performance of numpy.roll() by reducing the overhead introduced from the
+    flexibility of the numpy.roll() method such as the support for rolling over multiple dimensions.
+
+    Elements that roll beyond the last position are re-introduced at the beginning. Similarly, elements that roll
+    back beyond the first position are re-introduced at the end (with negative shift).
+
+    Examples
+    --------
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> _roll(x, shift=2)
+    # >>> array([8, 9, 0, 1, 2, 3, 4, 5, 6, 7])
+    #
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> _roll(x, shift=-2)
+    # >>> array([2, 3, 4, 5, 6, 7, 8, 9, 0, 1])
+    #
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> _roll(x, shift=12)
+    # >>> array([8, 9, 0, 1, 2, 3, 4, 5, 6, 7])
+
+    Benchmark
+    ---------
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> %timeit _roll(x, shift=2)
+    # >>> 1.89 µs ± 341 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+    #
+    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # >>> %timeit np.roll(x, shift=2)
+    # >>> 11.4 µs ± 776 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+
+    :param a: the input array
+    :type a: array_like
+    :param shift: the number of places by which elements are shifted
+    :type shift: int
+
+    :return: shifted array with the same shape as a
+    :return type: ndarray
+    """
     if not isinstance(a, np.ndarray):
         a = np.asarray(a)
     idx = shift % len(a)
@@ -489,7 +528,6 @@ def friedrich_coefficients(x, param):
             res["m_{}__r_{}__coeff_{}".format(m, r, coeff)] = calculated[m][r][coeff]
         except IndexError:
             res["m_{}__r_{}__coeff_{}".format(m, r, coeff)] = np.NaN
-        # return [(key, value) for key, value in res.items()]
         return [value for key, value in res.items()]
 
 

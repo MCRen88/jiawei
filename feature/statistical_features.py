@@ -437,12 +437,15 @@ def _do_extraction_on_chunk(x, default_fc_parameters = None):
                 # b =a
             if func.fctype == "combiner":
                 result = func(a, param=parameter_list)
+                # result = a
+            #
             else:
                 if parameter_list:
                     result = (func(a, **param) for param in
                               parameter_list)
                 else:
                     result = [("", func(a))]
+
 
 
             for key, item in enumerate(result):
@@ -505,13 +508,10 @@ def get_statistical_features(x):
 #######################################################################################################################
 
 
-
+#
 def get_parameters_features(x, default_fc_parameters=None):
     if default_fc_parameters is None:
         default_fc_parameters = ComprehensiveFCParameters()
     k = _do_extraction_on_chunk(x)
     return k
-
-
-
 

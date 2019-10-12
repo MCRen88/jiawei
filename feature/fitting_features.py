@@ -11,16 +11,6 @@ Unless required by applicable law or agreed to in writing, software distributed 
 from time_series_detector.common.tsd_common import *
 
 
-
-def time_series_moving_average_get_dict(x):
-    def _f():
-        for w in range(1, min(50, DEFAULT_WINDOW), 5):
-            temp = np.mean(x[-w:])
-            temp__ = temp - x[-1]
-            name = ("statistical_time_series_moving_average_{}".format(w))
-            yield {'{}'.format(name):temp__}
-    return list(_f())
-
 def time_series_moving_average(x): ########为什么从后开始计算平均值？？？？
     """
     Returns the difference between the last element of x and the smoothed value after Moving Average Algorithm
@@ -35,22 +25,15 @@ def time_series_moving_average(x): ########为什么从后开始计算平均值�
     :return type: list with float
     """
 
-    a = time_series_moving_average_get_dict(x)
+    list = []
+    for w in range(1, min(50, DEFAULT_WINDOW), 5):
+        temp = np.mean(x[-w:])
+        temp__ = temp - x[-1]
+        name = ("statistical_time_series_moving_average_{}".format(w))
+        list.append({'{}'.format(name):temp__})
 
-    return a
+    return list
 
-
-
-
-def time_series_weighted_moving_average_get_dict(x):
-    def _f():
-        for w in range(1, min(50, DEFAULT_WINDOW), 5):
-            w = min(len(x), w)
-            coefficient = np.array(range(1, w + 1))
-            temp__ = ((np.dot(coefficient, x[-w:])) / float(w * (w + 1) / 2)) - x[-1]
-            name = ("statistical_time_series_weighted_moving_average_{}".format(w))
-            yield {'{}'.format(name):temp__}
-    return list(_f())
 
 def time_series_weighted_moving_average(x):
     """
@@ -66,29 +49,14 @@ def time_series_weighted_moving_average(x):
     :return type: list with float
     """
 
-    a = time_series_weighted_moving_average_get_dict(x)
-    return a
-
-
-
-
-
-
-
-
-def time_series_exponential_weighted_moving_average_get_dict(x):
-    def _f():
-        for j in range(1, 10):
-            alpha = j / 10.0
-            s = [x[0]]
-            for i in range(1, len(x)):
-                temp = alpha * x[i] + (1 - alpha) * s[-1]
-                s.append(temp)
-                temp__ = s[-1] - x[-1]
-                name = ("statistical_time_series_exponential_weighted_moving_average_j{}_i{}".format(j,i))
-                yield {'{}'.format(name):temp__}
-    return list(_f())
-
+    list = []
+    for w in range(1, min(50, DEFAULT_WINDOW), 5):
+        w = min(len(x), w)
+        coefficient = np.array(range(1, w + 1))
+        temp__ = ((np.dot(coefficient, x[-w:])) / float(w * (w + 1) / 2)) - x[-1]
+        name = ("statistical_time_series_weighted_moving_average_{}".format(w))
+        list.append({'{}'.format(name):temp__})
+    return list
 
 
 def time_series_exponential_weighted_moving_average(x):
@@ -105,29 +73,18 @@ def time_series_exponential_weighted_moving_average(x):
     :return type: list with float
     """
 
-    a = time_series_exponential_weighted_moving_average_get_dict(x)
-    return a
+    list = []
+    for j in range(1, 10):
+        alpha = j / 10.0
+        s = [x[0]]
+        for i in range(1, len(x)):
+            temp = alpha * x[i] + (1 - alpha) * s[-1]
+            s.append(temp)
+            temp__ = s[-1] - x[-1]
+            name = ("statistical_time_series_exponential_weighted_moving_average_j{}_i{}".format(j,i))
+            list.append({'{}'.format(name):temp__})
+    return list
 
-
-
-
-def time_series_double_exponential_weighted_moving_average_get_dict(x):
-    def _f():
-        for j1 in range(1, 10, 2):
-            for j2 in range(1, 10, 2):
-                alpha = j1 / 10.0
-                gamma = j2 / 10.0
-                s = [x[0]]
-                b = [(x[3] - x[0]) / 3]  # s is the smoothing part, b is the trend part ######？？？？？？(x[2]-x[0])/3???
-                for i in range(1, len(x)):
-                    temp1 = alpha * x[i] + (1 - alpha) * (s[-1] + b[-1]) ####?????加(s[i-1] + b[i-1])
-                    s.append(temp1)
-                    temp2 = gamma * (s[-1] - s[-2]) + (1 - gamma) * b[-1]  ####?????gamma * (s[i-1] - s[i-2]) + (1 - gamma) * b[i-1]
-                    b.append(temp2)
-                    temp__ = s[-1] - x[-1]
-                    name = ("statistical_time_series_double_exponential_weighted_moving_average_j1{}_j2{}_i{}".format(j1,j2,i))
-                    yield {'{}'.format(name):temp__}
-    return list(_f())
 
 
 
@@ -146,10 +103,22 @@ def time_series_double_exponential_weighted_moving_average(x):
     :return: the value of this feature
     :return type: list with float
     """
-
-
-    a = time_series_double_exponential_weighted_moving_average_get_dict(x)
-    return a
+    list = []
+    for j1 in range(1, 10, 2):
+        for j2 in range(1, 10, 2):
+            alpha = j1 / 10.0
+            gamma = j2 / 10.0
+            s = [x[0]]
+            b = [(x[3] - x[0]) / 3]  # s is the smoothing part, b is the trend part ######？？？？？？(x[2]-x[0])/3???
+            for i in range(1, len(x)):
+                temp1 = alpha * x[i] + (1 - alpha) * (s[-1] + b[-1]) ####?????加(s[i-1] + b[i-1])
+                s.append(temp1)
+                temp2 = gamma * (s[-1] - s[-2]) + (1 - gamma) * b[-1]  ####?????gamma * (s[i-1] - s[i-2]) + (1 - gamma) * b[i-1]
+                b.append(temp2)
+                temp__ = s[-1] - x[-1]
+                name = ("statistical_time_series_double_exponential_weighted_moving_average_j1{}_j2{}_i{}".format(j1,j2,i))
+                list.append({'{}'.format(name):temp__})
+    return list
 
 def time_series_periodic_features(data_c_left, data_c_right, data_b_left, data_b_right, data_a):
     """
@@ -285,7 +254,7 @@ def get_fitting_features(x_list):
     fitting_features.extend(time_series_weighted_moving_average(x_list[4]))
     fitting_features.extend(time_series_exponential_weighted_moving_average(x_list[4]))
     fitting_features.extend(time_series_double_exponential_weighted_moving_average(x_list[4]))
-
+    #
     fitting_features.extend(time_series_periodic_features(x_list[0], x_list[1], x_list[2], x_list[3], x_list[4]))
     # append yourself fitting features here...
 
