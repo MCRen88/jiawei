@@ -213,19 +213,8 @@ if __name__ == "__main__":
     DEFAULT_WINDOW = 2
     total_dataset = pd.read_csv('/Users/xumiaochun/jiawei/tmp/selected_data.csv')
     list_to_print = []
-
     total_dataset.rename(columns={"timestamp":"timestamps", "label":"anomaly","point":"value"}, inplace=True)
-
     total_dataset = characteristics_format_match(total_dataset) #total_dataset中含有两新列----Date和Hour_Minute
-
-
-    # anomaly_view(total_dataset)#观察异常点和整体时序走向 （未进行数据平稳处理前）
-    # #判断序列的平稳性
-    # value_stable_determinate_view(total_dataset)
-
-    # total_dataset= model_makesense_determinate (total_dataset)
-
-    # list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
     selected_id = np.unique(total_dataset.line_id)
 
     new_dataset = []
@@ -241,6 +230,17 @@ if __name__ == "__main__":
     # print new_dataset
 
 
+
+
+
+########——————————后续检测
+    # anomaly_view(total_dataset)#观察异常点和整体时序走向 （未进行数据平稳处理前）
+    # #判断序列的平稳性
+    # value_stable_determinate_view(total_dataset)
+
+    # total_dataset= model_makesense_determinate (total_dataset)
+
+    # list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
 
     #
     # #
