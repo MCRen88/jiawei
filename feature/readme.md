@@ -82,7 +82,6 @@ feature: 存放时间序列特征相关的计算逻辑
 	C3
 	spkt_welch_density：译：该特征计算器估计不同频率下时间序列x的交叉功率谱密度。为此，首先将时间序列从时域转移到频域。
                        特征计算器返回不同频率的功率谱。
-	
     linear_trend 译：线性回归分析
 	linear_trend_timewise
 	fft_coefficient
