@@ -12,10 +12,17 @@ import pandas as pd
 from time_series_detector.common.tsd_common import *
 import feature_service
 from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.feature_selection import VarianceThreshold,SelectFromModel
+from sklearn.feature_selection import SelectFromModel
 
 
 def sliding_window(value, window_len,DAY_PNT):
+    """
+
+    :param value: the time series that need to calculate
+    :param window_len: length of sliding window
+    :param DAY_PNT: collected value number per day
+    :return: value window of now,the time of yesterday, the time of lask week
+    """
     value_window = []
     value = np.array(value)
 
@@ -28,10 +35,15 @@ def sliding_window(value, window_len,DAY_PNT):
 
     return value_window
     
-def combine_features_calculate (data, window,DAY_PNT):#####汇合了metis和tsfresh
+def combine_features_calculate (data, window,DAY_PNT):
+    """
+
+    :param data: dataset that contains time series to be analysed
+    :param window: length of sliding window
+    :param DAY_PNT: collected value number per day
+    :return: list of calculated features and label of the dataset time series
+    """
     features = []
-    label = []
-    # DAY_PNT = len(data.loc[data['Date'] == data['Date'].ix[len(data)/2]])
     sliding_arrays = sliding_window(data.value, window_len=window,DAY_PNT = DAY_PNT)
 
     for ith, arr in enumerate(sliding_arrays):
@@ -45,26 +57,18 @@ def combine_features_calculate (data, window,DAY_PNT):#####汇合了metis和tsfr
         t = k.iloc[:, i].tolist()
         y = pd.DataFrame(t)
         k_format_changed = pd.concat([k_format_changed, y], axis=1)
-    # # x_train format
     k_format_changed = k_format_changed.astype('float64')
     k_format_changed = k_format_changed.fillna(0)
     k_format_changed = k_format_changed.ix[:, ~((k_format_changed==0).all())] ##delete the columns that is all 0 values
     k_format_changed = k_format_changed.ix[:, ~((k_format_changed==1).all())] ##delete the columns that is all 1 values
 
-
-    # if with_label:
     label = data.anomaly[window + 7 * DAY_PNT-1:]
     label = pd.DataFrame(label)
-    # values = data.values[window + 7 * DAY_PNT-1:]
-    # values = pd.DataFrame(values)
-    # timestamps = data.timestamps[window + 7 * DAY_PNT-1:]
-    # timestamps = pd.DataFrame(timestamps)
     return [k_format_changed, label]
+
 
 def features_selected_ExtraTreesClassifier(x,y):
     '''
-    This func utilizes ExtraTreesClassifier in order to select meaningful features from the calculated features
-
     :param x: Selected features dataset
     :param y: Label data
     :return: dataset(DF) of selected features
@@ -80,8 +84,6 @@ def features_selected_ExtraTreesClassifier(x,y):
 
 def selected_columns_names(origin_features_df, selected_features_df):
     '''
-    This func aims to obtain the selected features' names
-
     :param origin_features_df: the set calculating numbers of values
     :param selected_features_df: the selected features dataset
     :return: name list of selected features
@@ -114,6 +116,11 @@ def selected_columns_names(origin_features_df, selected_features_df):
     
 
 def feature_extraction(total_dataset,window):
+    """
+    :param total_dataset: target analysis dataset
+    :param window: length of sliding window
+    :return: dataset of features that might be relevant to the label, label, name of the selected features
+    """
     ##先进行特征计算
     x_features_calculate,y_calculate = combine_features_calculate (total_dataset, window)
     #再进行特征选择
@@ -123,6 +130,12 @@ def feature_extraction(total_dataset,window):
     return x_features_selected, y_calculate, selected_features_name
 
 def cal_features_based_on_id(id_dataset,window,id_name):
+    """
+    :param id_dataset:  selected id dataset of a multiple id dataset
+    :param window: length of sliding window
+    :param id_name: name of the selected id
+    :return: a new dataset(DF) that contains id, calculate features and labels of the selected id dataset
+    """
     ##先进行特征计算
     # x_features_calculate,y_calculate = combine_features_calculate (id_dataset, window,DAY_PNT)
     #再进行特征选择

@@ -7,12 +7,10 @@ Licensed under the BSD 3-Clause License (the "License"); you may not use this fi
 https://opensource.org/licenses/BSD-3-Clause
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 """
-import itertools
-import warnings
+
 import numpy as np
 import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators
 from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_series
-from statistical_features import time_series_mean, time_series_variance, time_series_standard_deviation, time_series_median
 from builtins import range
 import pandas as pd
 from numpy.linalg import LinAlgError
@@ -49,36 +47,6 @@ __all__ = [	"time_series_autocorrelation",
 
 def _roll(a, shift):
     """
-    Roll 1D array elements. Improves the performance of numpy.roll() by reducing the overhead introduced from the
-    flexibility of the numpy.roll() method such as the support for rolling over multiple dimensions.
-
-    Elements that roll beyond the last position are re-introduced at the beginning. Similarly, elements that roll
-    back beyond the first position are re-introduced at the end (with negative shift).
-
-    Examples
-    --------
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> _roll(x, shift=2)
-    # >>> array([8, 9, 0, 1, 2, 3, 4, 5, 6, 7])
-    #
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> _roll(x, shift=-2)
-    # >>> array([2, 3, 4, 5, 6, 7, 8, 9, 0, 1])
-    #
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> _roll(x, shift=12)
-    # >>> array([8, 9, 0, 1, 2, 3, 4, 5, 6, 7])
-
-    Benchmark
-    ---------
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> %timeit _roll(x, shift=2)
-    # >>> 1.89 µs ± 341 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
-    #
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> %timeit np.roll(x, shift=2)
-    # >>> 11.4 µs ± 776 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
-
     :param a: the input array
     :type a: array_like
     :param shift: the number of places by which elements are shifted
@@ -95,19 +63,6 @@ def _roll(a, shift):
 
 def time_series_autocorrelation(x):
     """
-    Calculates the autocorrelation of the specified lag, according to the formula [1]
-
-    .. math::
-
-        \\frac{1}{(n-l)\sigma^{2}} \\sum_{t=1}^{n-l}(X_{t}-\\mu )(X_{t+l}-\\mu)
-
-    where :math:`n` is the length of the time series :math:`X_i`, :math:`\sigma^2` its variance and :math:`\mu` its
-    mean. `l` denotes the lag.
-
-    .. rubric:: References
-
-    [1] https://en.wikipedia.org/wiki/Autocorrelation#Estimation
-
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :param lag: the lag
@@ -123,8 +78,6 @@ def time_series_autocorrelation(x):
 
 def time_series_coefficient_of_variation(x):
     """
-    Calculates the coefficient of variation, mean value / square root of variation
-
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -138,15 +91,6 @@ def time_series_coefficient_of_variation(x):
 
 def time_series_binned_entropy(x):
     """
-    First bins the values of x into max_bins equidistant bins.
-    Then calculates the value of
-
-    .. math::
-
-        - \\sum_{k=0}^{min(max\\_bins, len(x))} p_k log(p_k) \\cdot \\mathbf{1}_{(p_k > 0)}
-
-    where :math:`p_k` is the percentage of samples in bin :math:`k`.
-
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :param max_bins: the maximal number of bins
@@ -167,9 +111,6 @@ def time_series_binned_entropy(x):
 
 def time_series_value_distribution(x):
     """
-    Given buckets, calculate the percentage of elements in the whole time series
-    in different buckets
-
     :param x: normalized time series
     :type x: pandas.Series
     :return: the values of this feature
@@ -184,9 +125,6 @@ def time_series_value_distribution(x):
 
 def time_series_daily_parts_value_distribution(x):
     """
-    Given buckets, calculate the percentage of elements in three subsequences
-    of the whole time series in different buckets
-
     :param x: normalized time series
     :type x: pandas.Series
     :return: the values of this feature
@@ -205,10 +143,6 @@ def time_series_daily_parts_value_distribution(x):
 
 def time_series_daily_parts_value_distribution_with_threshold(x):
     """
-    Split the whole time series into three parts: c, b, a.
-    Given a threshold = 0.01, return the percentage of elements of time series
-    which are less than threshold
-
     :param x: normalized time series
     :type x: pandas.Series
     :return: 6 values of this feature
@@ -250,10 +184,6 @@ def time_series_daily_parts_value_distribution_with_threshold(x):
 
 def time_series_window_parts_value_distribution_with_threshold(x):
     """
-    Split the whole time series into five parts.
-    Given a threshold = 0.01, return the percentage of elements of time series
-    which are less than threshold
-
     :param x: normalized time series
     :type x: pandas.Series
     :return: 5 values of this feature
@@ -288,22 +218,6 @@ def time_series_window_parts_value_distribution_with_threshold(x):
 
 def approximate_entropy(x, m, r):
     """
-    Implements a vectorized Approximate entropy algorithm.
-
-        https://en.wikipedia.org/wiki/Approximate_entropy
-
-    For short time-series this method is highly dependent on the parameters,
-    but should be stable for N > 2000, see:
-
-        Yentes et al. (2012) -
-        *The Appropriate Use of Approximate Entropy and Sample Entropy with Short Data Sets*
-
-
-    Other shortcomings and alternatives discussed in:
-
-        Richman & Moorman (2000) -
-        *Physiological time-series analysis using approximate entropy and sample entropy*
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param m: Length of compared run of data
@@ -335,13 +249,6 @@ def approximate_entropy(x, m, r):
 
 def sample_entropy(x):
     """
-    Calculate and return sample entropy of x.
-
-    .. rubric:: References
-
-    |  [1] http://en.wikipedia.org/wiki/Sample_Entropy
-    |  [2] https://www.ncbi.nlm.nih.gov/pubmed/10843903?dopt=Abstract
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
 
@@ -387,18 +294,6 @@ def sample_entropy(x):
 
 def cwt_coefficients(x, param):
     """
-    Calculates a Continuous wavelet transform for the Ricker wavelet, also known as the "Mexican hat wavelet" which is
-    defined by
-
-    .. math::
-        \\frac{2}{\\sqrt{3a} \\pi^{\\frac{1}{4}}} (1 - \\frac{x^2}{a^2}) exp(-\\frac{x^2}{2a^2})
-
-    where :math:`a` is the width parameter of the wavelet function.
-
-    This feature calculator takes three different parameter: widths, coeff and w. The feature calculater takes all the
-    different widths arrays and then calculates the cwt one time for each different width array. Then the values for the
-    different coefficient for coeff and width w are returned. (For each dic in param one feature is returned)
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"widths":x, "coeff": y, "w": z} with x array of int and y,z int
@@ -433,16 +328,6 @@ def cwt_coefficients(x, param):
 
 def fft_coefficient(x, param):
     """
-    Calculates the fourier coefficients of the one-dimensional discrete Fourier Transform for real input by fast
-    fourier transformation algorithm
-
-    .. math::
-        A_k =  \\sum_{m=0}^{n-1} a_m \\exp \\left \\{ -2 \\pi i \\frac{m k}{n} \\right \\}, \\qquad k = 0,
-        \\ldots , n-1.
-
-    The resulting coefficients will be complex, this feature calculator can return the real part (attr=="real"),
-    the imaginary part (attr=="imag), the absolute value (attr=""abs) and the angle in degrees (attr=="angle).
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"coeff": x, "attr": s} with x int and x >= 0, s str and in ["real", "imag",
@@ -473,17 +358,6 @@ def fft_coefficient(x, param):
 
 def ar_coefficient(x, param):
     """
-    This feature calculator fits the unconditional maximum likelihood
-    of an autoregressive AR(k) process.
-    The k parameter is the maximum lag of the process
-
-    .. math::
-
-        X_{t}=\\varphi_0 +\\sum _{{i=1}}^{k}\\varphi_{i}X_{{t-i}}+\\varepsilon_{t}
-
-    For the configurations from param which should contain the maxlag "k" and such an AR process is calculated. Then
-    the coefficients :math:`\\varphi_{i}` whose index :math:`i` contained from "coeff" are returned.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"coeff": x, "k": y} with x,y int
@@ -520,25 +394,11 @@ def ar_coefficient(x, param):
         else:
             res[column_name] = np.NaN
 
-    # return [(key, value) for key, value in res.items()]
     return [(value) for key, value in res.items()]
 
 
 def cid_ce(x, normalize):
     """
-    This function calculator is an estimate for a time series complexity [1] (A more complex time series has more peaks,
-    valleys etc.). It calculates the value of
-
-    .. math::
-
-        \\sqrt{ \\sum_{i=0}^{n-2lag} ( x_{i} - x_{i+1})^2 }
-
-    .. rubric:: References
-
-    |  [1] Batista, Gustavo EAPA, et al (2014).
-    |  CID: an efficient complexity-invariant distance for time series.
-    |  Data Mining and Knowledge Discovery 28.3 (2014): 634-669.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param normalize: should the time series be z-transformed?
@@ -561,30 +421,6 @@ def cid_ce(x, normalize):
 
 def partial_autocorrelation(x, param):
     """
-    Calculates the value of the partial autocorrelation function at the given lag. The lag `k` partial autocorrelation
-    of a time series :math:`\\lbrace x_t, t = 1 \\ldots T \\rbrace` equals the partial correlation of :math:`x_t` and
-    :math:`x_{t-k}`, adjusted for the intermediate variables
-    :math:`\\lbrace x_{t-1}, \\ldots, x_{t-k+1} \\rbrace` ([1]).
-    Following [2], it can be defined as
-
-    .. math::
-
-        \\alpha_k = \\frac{ Cov(x_t, x_{t-k} | x_{t-1}, \\ldots, x_{t-k+1})}
-        {\\sqrt{ Var(x_t | x_{t-1}, \\ldots, x_{t-k+1}) Var(x_{t-k} | x_{t-1}, \\ldots, x_{t-k+1} )}}
-
-    with (a) :math:`x_t = f(x_{t-1}, \\ldots, x_{t-k+1})` and (b) :math:`x_{t-k} = f(x_{t-1}, \\ldots, x_{t-k+1})`
-    being AR(k-1) models that can be fitted by OLS. Be aware that in (a), the regression is done on past values to
-    predict :math:`x_t` whereas in (b), future values are used to calculate the past value :math:`x_{t-k}`.
-    It is said in [1] that "for an AR(p), the partial autocorrelations [ :math:`\\alpha_k` ] will be nonzero for `k<=p`
-    and zero for `k>p`."
-    With this property, it is used to determine the lag of an AR-Process.
-
-    .. rubric:: References
-
-    |  [1] Box, G. E., Jenkins, G. M., Reinsel, G. C., & Ljung, G. M. (2015).
-    |  Time series analysis: forecasting and control. John Wiley & Sons.
-    |  [2] https://onlinecourses.science.psu.edu/stat510/node/62
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"lag": val} with int val indicating the lag to be returned
@@ -611,27 +447,7 @@ def partial_autocorrelation(x, param):
     return [(pacf_coeffs[lag["lag"]]) for lag in param]
 
 def agg_autocorrelation(x, param):
-    r"""
-    Calculates the value of an aggregation function :math:`f_{agg}` (e.g. the variance or the mean) over the
-    autocorrelation :math:`R(l)` for different lags. The autocorrelation :math:`R(l)` for lag :math:`l` is defined as
-
-    .. math::
-
-        R(l) = \frac{1}{(n-l)\sigma^{2}} \sum_{t=1}^{n-l}(X_{t}-\mu )(X_{t+l}-\mu)
-
-    where :math:`X_i` are the values of the time series, :math:`n` its length. Finally, :math:`\sigma^2` and
-    :math:`\mu` are estimators for its variance and mean
-    (See `Estimation of the Autocorrelation function <http://en.wikipedia.org/wiki/Autocorrelation#Estimation>`_).
-
-    The :math:`R(l)` for different lags :math:`l` form a vector. This feature calculator applies the aggregation
-    function :math:`f_{agg}` to this vector and returns
-
-    .. math::
-
-        f_{agg} \left( R(1), \ldots, R(m)\right) \quad \text{for} \quad m = max(n, maxlag).
-
-    Here :math:`maxlag` is the second parameter passed to this function.
-
+    """
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"f_agg": x, "maxlag", n} with x str, the name of a numpy function
@@ -651,18 +467,10 @@ def agg_autocorrelation(x, param):
         a = [0] * len(x)
     else:
         a = acf(x, unbiased=True, fft=n > THRESHOLD_TO_USE_FFT, nlags=max_maxlag)[1:]
-    # return [("f_agg_\"{}\"__maxlag_{}".format(config["f_agg"], config["maxlag"]),
-    #          getattr(np, config["f_agg"])(a[:int(config["maxlag"])])) for config in param]
     return [(getattr(np, config["f_agg"])(a[:int(config["maxlag"])])) for config in param]
 
 def symmetry_looking(x, param):
     """
-    Boolean variable denoting if the distribution of x *looks symmetric*. This is the case if
-
-    .. math::
-
-        | mean(X)-median(X)| < r * (max(X)-min(X))
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param r: the percentage of the range to compare with
@@ -680,27 +488,6 @@ def symmetry_looking(x, param):
 
 def time_reversal_asymmetry_statistic(x, lag):
     """
-    This function calculates the value of
-
-    .. math::
-
-        \\frac{1}{n-2lag} \sum_{i=0}^{n-2lag} x_{i + 2 \cdot lag}^2 \cdot x_{i + lag} - x_{i + lag} \cdot  x_{i}^2
-
-    which is
-
-    .. math::
-
-        \\mathbb{E}[L^2(X)^2 \cdot L(X) - L(X) \cdot X^2]
-
-    where :math:`\\mathbb{E}` is the mean and :math:`L` is the lag operator. It was proposed in [1] as a
-    promising feature to extract from time series.
-
-    .. rubric:: References
-
-    |  [1] Fulcher, B.D., Jones, N.S. (2014).
-    |  Highly comparative feature-based time-series classification.
-    |  Knowledge and Data Engineering, IEEE Transactions on 26, 3026–3037.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param lag: the lag that should be used in the calculation of the feature
@@ -720,27 +507,6 @@ def time_reversal_asymmetry_statistic(x, lag):
 
 def c3(x, lag):
     """
-    This function calculates the value of
-
-    .. math::
-
-        \\frac{1}{n-2lag} \sum_{i=0}^{n-2lag} x_{i + 2 \cdot lag}^2 \cdot x_{i + lag} \cdot x_{i}
-
-    which is
-
-    .. math::
-
-        \\mathbb{E}[L^2(X)^2 \cdot L(X) \cdot X]
-
-    where :math:`\\mathbb{E}` is the mean and :math:`L` is the lag operator. It was proposed in [1] as a measure of
-    non linearity in the time series.
-
-    .. rubric:: References
-
-    |  [1] Schreiber, T. and Schmitz, A. (1997).
-    |  Discrimination power of measures for nonlinearity in a time series
-    |  PHYSICAL REVIEW E, VOLUME 55, NUMBER 5
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param lag: the lag that should be used in the calculation of the feature
@@ -758,11 +524,6 @@ def c3(x, lag):
 
 def spkt_welch_density(x, param):
     """
-    This feature calculator estimates the cross power spectral density of the time series x at different frequencies.
-    To do so, the time series is first shifted from the time domain to the frequency domain.
-
-    The feature calculators returns the power spectrum of the different frequencies.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"coeff": x} with x int
@@ -773,7 +534,6 @@ def spkt_welch_density(x, param):
 
     freq, pxx = welch(x, nperseg=min(len(x), 256))
     coeff = [config["coeff"] for config in param]
-    indices = ["coeff_{}".format(i) for i in coeff]
 
     if len(pxx) <= np.max(coeff):  # There are fewer data points in the time series than requested coefficients
 
@@ -790,14 +550,6 @@ def spkt_welch_density(x, param):
 
 def linear_trend(x, param):
     """
-    Calculate a linear least-squares regression for the values of the time series versus the sequence from 0 to
-    length of the time series minus one.
-    This feature assumes the signal to be uniformly sampled. It will not use the time stamps to fit the model.
-    The parameters control which of the characteristics are returned.
-
-    Possible extracted attributes are "pvalue", "rvalue", "intercept", "slope", "stderr", see the documentation of
-    linregress for more information.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"attr": x} with x an string, the attribute name of the regression model
@@ -815,15 +567,6 @@ def linear_trend(x, param):
 
 def linear_trend_timewise(x, param):
     """
-    Calculate a linear least-squares regression for the values of the time series versus the sequence from 0 to
-    length of the time series minus one.
-    This feature uses the index of the time series to fit the model, which must be of a datetime
-    dtype.
-    The parameters control which of the characteristics are returned.
-
-    Possible extracted attributes are "pvalue", "rvalue", "intercept", "slope", "stderr", see the documentation of
-    linregress for more information.
-
     :param x: the time series to calculate the feature of. The index must be datetime.
     :type x: pandas.Series
     :param param: contains dictionaries {"attr": x} with x an string, the attribute name of the regression model

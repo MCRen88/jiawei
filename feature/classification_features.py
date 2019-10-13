@@ -23,19 +23,6 @@ __all__ = ["time_series_autocorrelation",
 
 def time_series_autocorrelation(x):
     """
-    Calculates the autocorrelation of the specified lag, according to the formula [1]
-
-    .. math::
-
-        \\frac{1}{(n-l)\sigma^{2}} \\sum_{t=1}^{n-l}(X_{t}-\\mu )(X_{t+l}-\\mu)
-
-    where :math:`n` is the length of the time series :math:`X_i`, :math:`\sigma^2` its variance and :math:`\mu` its
-    mean. `l` denotes the lag.
-
-    .. rubric:: References
-
-    [1] https://en.wikipedia.org/wiki/Autocorrelation#Estimation
-
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :param lag: the lag
@@ -51,8 +38,6 @@ def time_series_autocorrelation(x):
 
 def time_series_coefficient_of_variation(x):
     """
-    Calculates the coefficient of variation, mean value / square root of variation
-
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -65,15 +50,6 @@ def time_series_coefficient_of_variation(x):
 
 def time_series_binned_entropy(x):
     """
-    First bins the values of x into max_bins equidistant bins.
-    Then calculates the value of
-
-    .. math::
-
-        - \\sum_{k=0}^{min(max\\_bins, len(x))} p_k log(p_k) \\cdot \\mathbf{1}_{(p_k > 0)}
-
-    where :math:`p_k` is the percentage of samples in bin :math:`k`.
-
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :param max_bins: the maximal number of bins
@@ -92,9 +68,6 @@ def time_series_binned_entropy(x):
 
 def time_series_value_distribution(x):
     """
-    Given buckets, calculate the percentage of elements in the whole time series
-    in different buckets
-
     :param x: normalized time series
     :type x: pandas.Series
     :return: the values of this feature
@@ -106,9 +79,6 @@ def time_series_value_distribution(x):
 
 def time_series_daily_parts_value_distribution(x):
     """
-    Given buckets, calculate the percentage of elements in three subsequences
-    of the whole time series in different buckets
-
     :param x: normalized time series
     :type x: pandas.Series
     :return: the values of this feature
@@ -127,10 +97,6 @@ def time_series_daily_parts_value_distribution(x):
 
 def time_series_daily_parts_value_distribution_with_threshold(x):
     """
-    Split the whole time series into three parts: c, b, a.
-    Given a threshold = 0.01, return the percentage of elements of time series
-    which are less than threshold
-
     :param x: normalized time series
     :type x: pandas.Series
     :return: 6 values of this feature
@@ -170,19 +136,8 @@ def time_series_daily_parts_value_distribution_with_threshold(x):
     return features
 
 
-
-
-
-
-
-
-
 def time_series_window_parts_value_distribution_with_threshold(x):
     """
-    Split the whole time series into five parts.
-    Given a threshold = 0.01, return the percentage of elements of time series
-    which are less than threshold
-
     :param x: normalized time series
     :type x: pandas.Series
     :return: 5 values of this feature
@@ -220,10 +175,7 @@ def time_series_window_parts_value_distribution_with_threshold(x):
 
 def get_classification_features(x):
     classification_features =[
-        # {"time_series_mean_classification":time_series_mean(x)},
-        # {"time_series_variance_classification":time_series_variance(x)},
-        # {"time_series_standard_deviation_classification":time_series_standard_deviation(x)},
-        # {"time_series_median_classification":time_series_median(x)},
+
         {"time_series_autocorrelation_classification":time_series_autocorrelation(x)},
         {"time_series_coefficient_of_variation_classification":time_series_coefficient_of_variation(x)},
     ]

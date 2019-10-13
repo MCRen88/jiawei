@@ -17,11 +17,9 @@ seen by tsfresh as a feature calculator. Others will not be calculated.
 from __future__ import absolute_import, division
 
 import itertools
-import warnings
-from builtins import range
-
-
+import numpy as np
 import pandas as pd
+from builtins import range
 from numpy.linalg import LinAlgError
 from scipy.signal import cwt, find_peaks_cwt, ricker, welch
 from scipy.stats import linregress
@@ -31,42 +29,10 @@ from statsmodels.tsa.stattools import acf, adfuller, pacf
 
 # todo: make sure '_' works in parameter names in all cases, add a warning if not
 
-import numpy as np
-from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_series
 
 
 def _roll(a, shift):
     """
-    Roll 1D array elements. Improves the performance of numpy.roll() by reducing the overhead introduced from the
-    flexibility of the numpy.roll() method such as the support for rolling over multiple dimensions.
-
-    Elements that roll beyond the last position are re-introduced at the beginning. Similarly, elements that roll
-    back beyond the first position are re-introduced at the end (with negative shift).
-
-    Examples
-    --------
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> _roll(x, shift=2)
-    # >>> array([8, 9, 0, 1, 2, 3, 4, 5, 6, 7])
-    #
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> _roll(x, shift=-2)
-    # >>> array([2, 3, 4, 5, 6, 7, 8, 9, 0, 1])
-    #
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> _roll(x, shift=12)
-    # >>> array([8, 9, 0, 1, 2, 3, 4, 5, 6, 7])
-
-    Benchmark
-    ---------
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> %timeit _roll(x, shift=2)
-    # >>> 1.89 µs ± 341 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
-    #
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> %timeit np.roll(x, shift=2)
-    # >>> 11.4 µs ± 776 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
-
     :param a: the input array
     :type a: array_like
     :param shift: the number of places by which elements are shifted
@@ -83,22 +49,6 @@ def _roll(a, shift):
 
 def _get_length_sequences_where(x):
     """
-    This method calculates the length of all sub-sequences where the array x is either True or 1.
-
-    Examples
-    --------
-    # >>> x = [0,1,0,0,1,1,1,0,0,1,0,1,1]
-    # >>> _get_length_sequences_where(x)
-    # >>> [1, 3, 1, 2]
-    #
-    # >>> x = [0,True,0,0,True,True,True,0,0,True,0,True,True]
-    # >>> _get_length_sequences_where(x)
-    # >>> [1, 3, 1, 2]
-    #
-    # >>> x = [0,True,0,0,1,True,1,0,0,True,0,1,True]
-    # >>> _get_length_sequences_where(x)
-    # >>> [1, 3, 1, 2]
-
     :param x: An iterable containing only 1, True, 0 and False values
     :return: A list with the length of all sub-sequences where the array is either True or False. If no ones or Trues
     contained, the list [0] is returned.
@@ -112,18 +62,6 @@ def _get_length_sequences_where(x):
 
 def _estimate_friedrich_coefficients(x, m, r):
     """
-    Coefficients of polynomial :math:`h(x)`, which has been fitted to
-    the deterministic dynamics of Langevin model
-    .. math::
-        \dot{x}(t) = h(x(t)) + \mathcal{N}(0,R)
-
-    As described by
-
-        Friedrich et al. (2000): Physics Letters A 271, p. 217-222
-        *Extracting model equations from experimental data*
-
-    For short time-series this method is highly dependent on the parameters.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param m: order of polynom to fit for estimating fixed points of dynamics
@@ -153,27 +91,8 @@ def _estimate_friedrich_coefficients(x, m, r):
         return [np.NaN] * (m + 1)
 
 
-# def _aggregate_on_chunks(x, f_agg):
-#     """
-#     Takes the time series x and constructs a lower sampled version of it by applying the aggregation function f_agg on
-#     consecutive chunks of length chunk_len
-#
-#     :param x: the time series to calculate the aggregation of
-#     :type x: numpy.ndarray
-#     :param f_agg: The name of the aggregation function that should be an attribute of the pandas.Series
-#     :type f_agg: str
-#     :param chunk_len: The size of the chunks where to aggregate the time series
-#     :type chunk_len: int
-#     :return: A list of the aggregation function over the chunks
-#     :return type: list
-#     """
-#     return [getattr(x[i: (i + 1)], f_agg)() for i in range(int(np.ceil(len(x))))]
-
 def _aggregate_on_chunks(x, f_agg, chunk_len):
     """
-    Takes the time series x and constructs a lower sampled version of it by applying the aggregation function f_agg on
-    consecutive chunks of length chunk_len
-
     :param x: the time series to calculate the aggregation of
     :type x: numpy.ndarray
     :param f_agg: The name of the aggregation function that should be an attribute of the pandas.Series
@@ -185,9 +104,12 @@ def _aggregate_on_chunks(x, f_agg, chunk_len):
     """
     return [getattr(x[i * chunk_len: (i + 1) * chunk_len], f_agg)() for i in range(int(np.ceil(len(x) / chunk_len)))]
 
+
 def set_property(key, value):
     """
-    This method returns a decorator that sets the property key of the function to value
+    :param key: property key of the function
+    :param value: set as "simple" or "combiner"
+    :return: decorator that sets the property key of the function to value, that is, "simple" or "combiner"
     """
     def decorate_func(func):
         setattr(func, key, value)
@@ -200,27 +122,6 @@ def set_property(key, value):
 @set_property("fctype", "simple")
 def time_reversal_asymmetry_statistic(x, lag):
     """
-    This function calculates the value of
-
-    .. math::
-
-        \\frac{1}{n-2lag} \sum_{i=0}^{n-2lag} x_{i + 2 \cdot lag}^2 \cdot x_{i + lag} - x_{i + lag} \cdot  x_{i}^2
-
-    which is
-
-    .. math::
-
-        \\mathbb{E}[L^2(X)^2 \cdot L(X) - L(X) \cdot X^2]
-
-    where :math:`\\mathbb{E}` is the mean and :math:`L` is the lag operator. It was proposed in [1] as a
-    promising feature to extract from time series.
-
-    .. rubric:: References
-
-    |  [1] Fulcher, B.D., Jones, N.S. (2014).
-    |  Highly comparative feature-based time-series classification.
-    |  Knowledge and Data Engineering, IEEE Transactions on 26, 3026–3037.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param lag: the lag that should be used in the calculation of the feature
@@ -241,27 +142,6 @@ def time_reversal_asymmetry_statistic(x, lag):
 @set_property("fctype", "simple")
 def c3(x, lag):
     """
-    This function calculates the value of
-
-    .. math::
-
-        \\frac{1}{n-2lag} \sum_{i=0}^{n-2lag} x_{i + 2 \cdot lag}^2 \cdot x_{i + lag} \cdot x_{i}
-
-    which is
-
-    .. math::
-
-        \\mathbb{E}[L^2(X)^2 \cdot L(X) \cdot X]
-
-    where :math:`\\mathbb{E}` is the mean and :math:`L` is the lag operator. It was proposed in [1] as a measure of
-    non linearity in the time series.
-
-    .. rubric:: References
-
-    |  [1] Schreiber, T. and Schmitz, A. (1997).
-    |  Discrimination power of measures for nonlinearity in a time series
-    |  PHYSICAL REVIEW E, VOLUME 55, NUMBER 5
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param lag: the lag that should be used in the calculation of the feature
@@ -281,12 +161,6 @@ def c3(x, lag):
 @set_property("fctype", "combiner")
 def symmetry_looking(x, param):
     """
-    Boolean variable denoting if the distribution of x *looks symmetric*. This is the case if
-
-    .. math::
-
-        | mean(X)-median(X)| < r * (max(X)-min(X))
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param r: the percentage of the range to compare with
@@ -298,8 +172,6 @@ def symmetry_looking(x, param):
         x = np.asarray(x)
     mean_median_difference = np.abs(np.mean(x) - np.median(x))
     max_min_difference = np.max(x) - np.min(x)
-    # return [("r_{}".format(r["r"]), mean_median_difference < (r["r"] * max_min_difference))
-    #         for r in param]
     return [(mean_median_difference < (r["r"] * max_min_difference))
             for r in param]
 
@@ -307,16 +179,6 @@ def symmetry_looking(x, param):
 @set_property("fctype", "simple")
 def large_standard_deviation(x, r):
     """
-    Boolean variable denoting if the standard dev of x is higher
-    than 'r' times the range = difference between max and min of x.
-    Hence it checks if
-
-    .. math::
-
-        std(x) > r * (max(X)-min(X))
-
-    According to a rule of the thumb, the standard deviation should be a forth of the range of the values.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param r: the percentage of the range to compare with
@@ -333,9 +195,6 @@ def large_standard_deviation(x, r):
 @set_property("fctype", "combiner")
 def index_mass_quantile(x, param):
     """
-    Those apply features calculate the relative index i where q% of the mass of the time series x lie left of i.
-    For example for q = 50% this feature calculator will return the mass center of the time series
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"q": x} with x float
@@ -350,40 +209,17 @@ def index_mass_quantile(x, param):
 
     if s == 0:
         # all values in x are zero or it has length 0
-        # return [("q_{}".format(config["q"]), np.NaN) for config in param]
         return [(np.NaN) for config in param]
 
     else:
         # at least one value is not zero
         mass_centralized = np.cumsum(abs_x) / s
-        # return [("q_{}".format(config["q"]),
-        #          (np.argmax(mass_centralized >= config["q"])+1)/len(x)) for config in param]
         return [((np.argmax(mass_centralized >= config["q"])+1)/len(x)) for config in param]
 
 
 @set_property("fctype", "combiner")
 def agg_autocorrelation(x, param):
-    r"""
-    Calculates the value of an aggregation function :math:`f_{agg}` (e.g. the variance or the mean) over the
-    autocorrelation :math:`R(l)` for different lags. The autocorrelation :math:`R(l)` for lag :math:`l` is defined as
-
-    .. math::
-
-        R(l) = \frac{1}{(n-l)\sigma^{2}} \sum_{t=1}^{n-l}(X_{t}-\mu )(X_{t+l}-\mu)
-
-    where :math:`X_i` are the values of the time series, :math:`n` its length. Finally, :math:`\sigma^2` and
-    :math:`\mu` are estimators for its variance and mean
-    (See `Estimation of the Autocorrelation function <http://en.wikipedia.org/wiki/Autocorrelation#Estimation>`_).
-
-    The :math:`R(l)` for different lags :math:`l` form a vector. This feature calculator applies the aggregation
-    function :math:`f_{agg}` to this vector and returns
-
-    .. math::
-
-        f_{agg} \left( R(1), \ldots, R(m)\right) \quad \text{for} \quad m = max(n, maxlag).
-
-    Here :math:`maxlag` is the second parameter passed to this function.
-
+    """
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"f_agg": x, "maxlag", n} with x str, the name of a numpy function
@@ -403,37 +239,12 @@ def agg_autocorrelation(x, param):
         a = [0] * len(x)
     else:
         a = acf(x, unbiased=True, fft=n > THRESHOLD_TO_USE_FFT, nlags=max_maxlag)[1:]
-    # return [("f_agg_\"{}\"__maxlag_{}".format(config["f_agg"], config["maxlag"]),
-    #          getattr(np, config["f_agg"])(a[:int(config["maxlag"])])) for config in param]
     return [(getattr(np, config["f_agg"])(a[:int(config["maxlag"])])) for config in param]
+
 
 @set_property("fctype", "combiner")
 def partial_autocorrelation(x, param):
     """
-    Calculates the value of the partial autocorrelation function at the given lag. The lag `k` partial autocorrelation
-    of a time series :math:`\\lbrace x_t, t = 1 \\ldots T \\rbrace` equals the partial correlation of :math:`x_t` and
-    :math:`x_{t-k}`, adjusted for the intermediate variables
-    :math:`\\lbrace x_{t-1}, \\ldots, x_{t-k+1} \\rbrace` ([1]).
-    Following [2], it can be defined as
-
-    .. math::
-
-        \\alpha_k = \\frac{ Cov(x_t, x_{t-k} | x_{t-1}, \\ldots, x_{t-k+1})}
-        {\\sqrt{ Var(x_t | x_{t-1}, \\ldots, x_{t-k+1}) Var(x_{t-k} | x_{t-1}, \\ldots, x_{t-k+1} )}}
-
-    with (a) :math:`x_t = f(x_{t-1}, \\ldots, x_{t-k+1})` and (b) :math:`x_{t-k} = f(x_{t-1}, \\ldots, x_{t-k+1})`
-    being AR(k-1) models that can be fitted by OLS. Be aware that in (a), the regression is done on past values to
-    predict :math:`x_t` whereas in (b), future values are used to calculate the past value :math:`x_{t-k}`.
-    It is said in [1] that "for an AR(p), the partial autocorrelations [ :math:`\\alpha_k` ] will be nonzero for `k<=p`
-    and zero for `k>p`."
-    With this property, it is used to determine the lag of an AR-Process.
-
-    .. rubric:: References
-
-    |  [1] Box, G. E., Jenkins, G. M., Reinsel, G. C., & Ljung, G. M. (2015).
-    |  Time series analysis: forecasting and control. John Wiley & Sons.
-    |  [2] https://onlinecourses.science.psu.edu/stat510/node/62
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"lag": val} with int val indicating the lag to be returned
@@ -456,26 +267,12 @@ def partial_autocorrelation(x, param):
         pacf_coeffs = list(pacf(x, method="ld", nlags=max_lag))
         pacf_coeffs = pacf_coeffs + [np.nan] * max(0, (max_demanded_lag - max_lag))
 
-    # return [("lag_{}".format(lag["lag"]), pacf_coeffs[lag["lag"]]) for lag in param]
     return [(pacf_coeffs[lag["lag"]]) for lag in param]
 
 
 @set_property("fctype", "simple")
 def autocorrelation(x, lag):
     """
-    Calculates the autocorrelation of the specified lag, according to the formula [1]
-
-    .. math::
-
-        \\frac{1}{(n-l)\sigma^{2}} \\sum_{t=1}^{n-l}(X_{t}-\\mu )(X_{t+l}-\\mu)
-
-    where :math:`n` is the length of the time series :math:`X_i`, :math:`\sigma^2` its variance and :math:`\mu` its
-    mean. `l` denotes the lag.
-
-    .. rubric:: References
-
-    [1] https://en.wikipedia.org/wiki/Autocorrelation#Estimation
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param lag: the lag
@@ -507,21 +304,6 @@ def autocorrelation(x, lag):
 @set_property("fctype", "simple")
 def number_peaks(x, n):
     """
-    Calculates the number of peaks of at least support n in the time series x. A peak of support n is defined as a
-    subsequence of x where a value occurs, which is bigger than its n neighbours to the left and to the right.
-
-    Hence in the sequence
-
-    # >>> x = [3, 0, 0, 4, 0, 0, 13]
-
-    4 is a peak of support 1 and 2 because in the subsequences
-
-    # >>> [0, 4, 0]
-    # >>> [0, 0, 4, 0, 0]
-
-    4 is still the highest value. Here, 4 is not a peak of support 3 because 13 is the 3th neighbour to the right of 4
-    and its bigger than 4.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param n: the support of the peak
@@ -543,18 +325,10 @@ def number_peaks(x, n):
         res &= (x_reduced > _roll(x, -i)[n:-n])
     return np.sum(res)
 
+
 @set_property("fctype", "simple")
 def binned_entropy(x, max_bins):
     """
-    First bins the values of x into max_bins equidistant bins.
-    Then calculates the value of
-
-    .. math::
-
-        - \\sum_{k=0}^{min(max\\_bins, len(x))} p_k log(p_k) \\cdot \\mathbf{1}_{(p_k > 0)}
-
-    where :math:`p_k` is the percentage of samples in bin :math:`k`.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param max_bins: the maximal number of bins
@@ -567,15 +341,11 @@ def binned_entropy(x, max_bins):
     hist, bin_edges = np.histogram(x, bins=max_bins)
     probs = hist / x.size
     return - np.sum(p * np.math.log(p) for p in probs if p != 0)
-#
+
+
 @set_property("fctype", "combiner")
 def spkt_welch_density(x, param):
     """
-    This feature calculator estimates the cross power spectral density of the time series x at different frequencies.
-    To do so, the time series is first shifted from the time domain to the frequency domain.
-
-    The feature calculators returns the power spectrum of the different frequencies.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"coeff": x} with x int
@@ -583,10 +353,8 @@ def spkt_welch_density(x, param):
     :return: the different feature values
     :return type: pandas.Series
     """
-
     freq, pxx = welch(x, nperseg=min(len(x), 256))
     coeff = [config["coeff"] for config in param]
-    indices = ["coeff_{}".format(i) for i in coeff]
 
     if len(pxx) <= np.max(coeff):  # There are fewer data points in the time series than requested coefficients
 
@@ -602,22 +370,9 @@ def spkt_welch_density(x, param):
 
 
 
-
-
 @set_property("fctype", "combiner")
 def ar_coefficient(x, param):
     """
-    This feature calculator fits the unconditional maximum likelihood
-    of an autoregressive AR(k) process.
-    The k parameter is the maximum lag of the process
-
-    .. math::
-
-        X_{t}=\\varphi_0 +\\sum _{{i=1}}^{k}\\varphi_{i}X_{{t-i}}+\\varepsilon_{t}
-
-    For the configurations from param which should contain the maxlag "k" and such an AR process is calculated. Then
-    the coefficients :math:`\\varphi_{i}` whose index :math:`i` contained from "coeff" are returned.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"coeff": x, "k": y} with x,y int
@@ -654,7 +409,6 @@ def ar_coefficient(x, param):
         else:
             res[column_name] = np.NaN
 
-    # return [(key, value) for key, value in res.items()]
     return [(value) for key, value in res.items()]
 
 
@@ -662,12 +416,6 @@ def ar_coefficient(x, param):
 @set_property("fctype", "simple")
 def change_quantiles(x, ql, qh, isabs, f_agg):
     """
-    First fixes a corridor given by the quantiles ql and qh of the distribution of x.
-    Then calculates the average, absolute value of consecutive changes of the series x inside this corridor.
-
-    Think about selecting a corridor on the
-    y-Axis and only calculating the mean of the absolute change of the time series inside this corridor.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param ql: the lower quantile of the corridor
@@ -706,20 +454,9 @@ def change_quantiles(x, ql, qh, isabs, f_agg):
 
 
 
-
 @set_property("fctype", "combiner")
 def fft_coefficient(x, param):
     """
-    Calculates the fourier coefficients of the one-dimensional discrete Fourier Transform for real input by fast
-    fourier transformation algorithm
-
-    .. math::
-        A_k =  \\sum_{m=0}^{n-1} a_m \\exp \\left \\{ -2 \\pi i \\frac{m k}{n} \\right \\}, \\qquad k = 0,
-        \\ldots , n-1.
-
-    The resulting coefficients will be complex, this feature calculator can return the real part (attr=="real"),
-    the imaginary part (attr=="imag), the absolute value (attr=""abs) and the angle in degrees (attr=="angle).
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"coeff": x, "attr": s} with x int and x >= 0, s str and in ["real", "imag",
@@ -736,6 +473,12 @@ def fft_coefficient(x, param):
     fft = np.fft.rfft(x)
 
     def complex_agg(x, agg):
+        """
+        :param x: the time series to calculate the feature of
+        :param agg: argument
+        :return: return the angle of the argument.
+
+        """
         if agg == "real":
             return x.real
         elif agg == "imag":
@@ -744,22 +487,14 @@ def fft_coefficient(x, param):
             return np.abs(x)
         elif agg == "angle":
             return np.angle(x, deg=True)
-
-    res = [complex_agg(fft[config["coeff"]], config["attr"]) if config["coeff"] < len(fft)
-           else np.NaN for config in param]
-    index = ['coeff_{}__attr_"{}"'.format(config["coeff"], config["attr"]) for config in param]
-    # return zip(index, res)
-    # return zip(res)
     return (complex_agg(fft[config["coeff"]], config["attr"]) if config["coeff"] < len(fft)
     else np.NaN for config in param)
 
 
-#
+
 @set_property("fctype", "combiner")
 def fft_aggregated(x, param):
     """
-    Returns the spectral centroid (mean), variance, skew, and kurtosis of the absolute fourier transform spectrum.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"aggtype": s} where s str and in ["centroid", "variance",
@@ -775,9 +510,6 @@ def fft_aggregated(x, param):
 
     def get_moment(y, moment):
         """
-        Returns the (non centered) moment of the distribution y:
-        E[y**moment] = \sum_i[index(y_i)^moment * y_i] / \sum_i[y_i]
-
         :param y: the discrete distribution from which one wants to calculate the moment
         :type y: pandas.Series or np.array
         :param moment: the moment one wants to calcalate (choose 1,2,3, ... )
@@ -807,9 +539,6 @@ def fft_aggregated(x, param):
 
     def get_skew(y):
         """
-        Calculates the skew as the third standardized moment.
-        Ref: https://en.wikipedia.org/wiki/Skewness#Definition
-
         :param y: the discrete distribution from which one wants to calculate the skew
         :type y: pandas.Series or np.array
         :return: the skew of distribution y
@@ -828,9 +557,6 @@ def fft_aggregated(x, param):
 
     def get_kurtosis(y):
         """
-        Calculates the kurtosis as the fourth standardized moment.
-        Ref: https://en.wikipedia.org/wiki/Kurtosis#Pearson_moments
-
         :param y: the discrete distribution from which one wants to calculate the kurtosis
         :type y: pandas.Series or np.array
         :return: the kurtosis of distribution y
@@ -858,8 +584,6 @@ def fft_aggregated(x, param):
     fft_abs = np.abs(np.fft.rfft(x))
 
     res = [calculation[config["aggtype"]](fft_abs) for config in param]
-    index = ['aggtype_"{}"'.format(config["aggtype"]) for config in param]
-    # return zip(index, res)
     return res
 
 
@@ -867,8 +591,6 @@ def fft_aggregated(x, param):
 @set_property("fctype", "simple")
 def value_count(x, value):
     """
-    Count occurrences of `value` in time series x.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param value: the value to be counted
@@ -887,8 +609,6 @@ def value_count(x, value):
 @set_property("fctype", "simple")
 def range_count(x, min, max):
     """
-    Count observed values within the interval [min, max).
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param min: the inclusive lower bound of the range
@@ -905,22 +625,6 @@ def range_count(x, min, max):
 @set_property("high_comp_cost", True)
 def approximate_entropy(x, m, r):
     """
-    Implements a vectorized Approximate entropy algorithm.
-
-        https://en.wikipedia.org/wiki/Approximate_entropy
-
-    For short time-series this method is highly dependent on the parameters,
-    but should be stable for N > 2000, see:
-
-        Yentes et al. (2012) -
-        *The Appropriate Use of Approximate Entropy and Sample Entropy with Short Data Sets*
-
-
-    Other shortcomings and alternatives discussed in:
-
-        Richman & Moorman (2000) -
-        *Physiological time-series analysis using approximate entropy and sample entropy*
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param m: Length of compared run of data
@@ -953,11 +657,6 @@ def approximate_entropy(x, m, r):
 @set_property("fctype", "combiner")
 def augmented_dickey_fuller(x, param):
     """
-    The Augmented Dickey-Fuller test is a hypothesis test which checks whether a unit root is present in a time
-    series sample. This feature calculator returns the value of the respective test statistic.
-
-    See the statsmodels implementation for references and more details.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"attr": x} with x str, either "teststat", "pvalue" or "usedlag"
@@ -975,11 +674,6 @@ def augmented_dickey_fuller(x, param):
     except MissingDataError: # is thrown for e.g. inf or nan in the data
         res = np.NaN, np.NaN, np.NaN
 
-    # return [('attr_"{}"'.format(config["attr"]),
-    #          res[0] if config["attr"] == "teststat"
-    #          else res[1] if config["attr"] == "pvalue"
-    #          else res[2] if config["attr"] == "usedlag" else np.NaN)
-    #         for config in param]
     return [(res[0] if config["attr"] == "teststat"
              else res[1] if config["attr"] == "pvalue"
              else res[2] if config["attr"] == "usedlag" else np.NaN)
@@ -989,10 +683,6 @@ def augmented_dickey_fuller(x, param):
 @set_property("fctype", "simple")
 def number_crossing_m(x, m):
     """
-    Calculates the number of crossings of x on m. A crossing is defined as two sequential values where the first value
-    is lower than m and the next is greater, or vice-versa. If you set m to zero, you will get the number of zero
-    crossings.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param m: the threshold for the crossing
@@ -1010,19 +700,6 @@ def number_crossing_m(x, m):
 @set_property("fctype", "combiner")
 def energy_ratio_by_chunks(x, param):
     """
-    Calculates the sum of squares of chunk i out of N chunks expressed as a ratio with the sum of squares over the whole
-    series.
-
-    Takes as input parameters the number num_segments of segments to divide the series into and segment_focus
-    which is the segment number (starting at zero) to return a feature on.
-
-    If the length of the time series is not a multiple of the number of segments, the remaining data points are
-    distributed on the bins starting from the first. For example, if your time series consists of 8 entries, the
-    first two bins will contain 3 and the last two values, e.g. `[ 0.,  1.,  2.], [ 3.,  4.,  5.]` and `[ 6.,  7.]`.
-
-    Note that the answer for `num_segments = 1` is a trivial "1" but we handle this scenario
-    in case somebody calls it. Sum of the ratios should be 1.0.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"num_segments": N, "segment_focus": i} with N, i both ints
@@ -1044,26 +721,12 @@ def energy_ratio_by_chunks(x, param):
         res_index.append("num_segments_{}__segment_focus_{}".format(num_segments, segment_focus))
 
     res_data = np.array(res_data)
-    # return list(zip(res_index, res_data)) # Materialize as list for Python 3 compatibility with name handling
     return res_data # Materialize as list for Python 3 compatibility with name handling
 
 
 @set_property("fctype", "simple")
 def cid_ce(x, normalize):
     """
-    This function calculator is an estimate for a time series complexity [1] (A more complex time series has more peaks,
-    valleys etc.). It calculates the value of
-
-    .. math::
-
-        \\sqrt{ \\sum_{i=0}^{n-2lag} ( x_{i} - x_{i+1})^2 }
-
-    .. rubric:: References
-
-    |  [1] Batista, Gustavo EAPA, et al (2014).
-    |  CID: an efficient complexity-invariant distance for time series.
-    |  Data Mining and Knowledge Discovery 28.3 (2014): 634-669.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param normalize: should the time series be z-transformed?
@@ -1089,8 +752,6 @@ def cid_ce(x, normalize):
 @set_property("fctype", "simple")
 def ratio_beyond_r_sigma(x, r):
     """
-    Ratio of values that are more than r*std(x) (so r sigma) away from the mean of x.
-
     :param x: the time series to calculate the feature of
     :type x: iterable
     :return: the value of this feature
@@ -1100,43 +761,11 @@ def ratio_beyond_r_sigma(x, r):
         x = np.asarray(x)
     return np.sum(np.abs(x - np.mean(x)) > r * np.std(x))/x.size
 
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
 
 
 @set_property("fctype", "simple")
 def number_cwt_peaks(x, n):
     """
-    This feature calculator searches for different peaks in x. To do so, x is smoothed by a ricker wavelet and for
-    widths ranging from 1 to n. This feature calculator returns the number of peaks that occur at enough width scales
-    and with sufficiently high Signal-to-Noise-Ratio (SNR)
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param n: maximum width to consider
@@ -1151,8 +780,6 @@ def number_cwt_peaks(x, n):
 @set_property("fctype", "simple")
 def quantile(x, q):
     """
-    Calculates the q quantile of x. This is the value of x greater than q% of the ordered values from x.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param q: the quantile to calculate
@@ -1164,167 +791,9 @@ def quantile(x, q):
     return pd.Series.quantile(x, q)
 
 
-
-
-
-
-
-
-
-
-############################################################################################################################################
-@set_property("fctype", "simple")
-def variance_larger_than_standard_deviation(x):
-    """
-    Boolean variable denoting if the variance of x is greater than its standard deviation. Is equal to variance of x
-    being larger than 1
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: bool
-    """
-    y = np.var(x)
-    return y > np.sqrt(y)
-
-
-
-
-
-
-
-
-@set_property("fctype", "simple")
-def has_duplicate_max(x):
-    """
-    Checks if the maximum value of x is observed more than once
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: bool
-    """
-    if not isinstance(x, (np.ndarray, pd.Series)):
-        x = np.asarray(x)
-    return np.sum(x == np.max(x)) >= 2
-
-
-@set_property("fctype", "simple")
-def has_duplicate_min(x):
-    """
-    Checks if the minimal value of x is observed more than once
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: bool
-    """
-    if not isinstance(x, (np.ndarray, pd.Series)):
-        x = np.asarray(x)
-    return np.sum(x == np.min(x)) >= 2
-
-
-@set_property("fctype", "simple")
-def has_duplicate(x):
-    """
-    Checks if any value in x occurs more than once
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: bool
-    """
-    if not isinstance(x, (np.ndarray, pd.Series)):
-        x = np.asarray(x)
-    return x.size != np.unique(x).size
-
-
-@set_property("fctype", "simple")
-@set_property("minimal", True)
-def sum_values(x):
-    """
-    Calculates the sum over the time series values
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    if len(x) == 0:
-        return 0
-
-    return np.sum(x)
-
-
-
-
-
-@set_property("fctype", "simple")
-def abs_energy(x):
-    """
-    Returns the absolute energy of the time series which is the sum over the squared values
-
-    .. math::
-
-        E = \\sum_{i=1,\ldots, n} x_i^2
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    if not isinstance(x, (np.ndarray, pd.Series)):
-        x = np.asarray(x)
-    return np.dot(x, x)
-
-#
-
-
-
-@set_property("fctype", "simple")
-def mean_abs_change(x):
-    """
-    Returns the mean over the absolute differences between subsequent time series values which is
-
-    .. math::
-
-        \\frac{1}{n} \\sum_{i=1,\ldots, n-1} | x_{i+1} - x_{i}|
-
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    return np.mean(np.abs(np.diff(x)))
-
-
-@set_property("fctype", "simple")
-def mean_change(x):
-    """
-    Returns the mean over the differences between subsequent time series values which is
-
-    .. math::
-
-        \\frac{1}{n} \\sum_{i=1,\ldots, n-1}  x_{i+1} - x_{i}
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    return np.mean(np.diff(x))
-
-
 @set_property("fctype", "simple")
 def mean_second_derivative_central(x):
     """
-    Returns the mean value of a central approximation of the second derivative
-
-    .. math::
-
-        \\frac{1}{n} \\sum_{i=1,\ldots, n-1}  \\frac{1}{2} (x_{i+2} - 2 \\cdot x_{i+1} + x_i)
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :return: the value of this feature
@@ -1336,282 +805,8 @@ def mean_second_derivative_central(x):
 
 
 @set_property("fctype", "simple")
-@set_property("minimal", True)
-def median(x):
-    """
-    Returns the median of x
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    return np.median(x)
-
-
-@set_property("fctype", "simple")
-@set_property("minimal", True)
-def mean(x):
-    """
-    Returns the mean of x
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    return np.mean(x)
-
-
-@set_property("fctype", "simple")
-@set_property("minimal", True)
-def length(x):
-    """
-    Returns the length of x
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: int
-    """
-    return len(x)
-
-
-@set_property("fctype", "simple")
-@set_property("minimal", True)
-def standard_deviation(x):
-    """
-    Returns the standard deviation of x
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    return np.std(x)
-
-
-@set_property("fctype", "simple")
-@set_property("minimal", True)
-def variance(x):
-    """
-    Returns the variance of x
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    return np.var(x)
-
-
-@set_property("fctype", "simple")
-def skewness(x):
-    """
-    Returns the sample skewness of x (calculated with the adjusted Fisher-Pearson standardized
-    moment coefficient G1).
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    if not isinstance(x, pd.Series):
-        x = pd.Series(x)
-    return pd.Series.skew(x)
-
-
-@set_property("fctype", "simple")
-def kurtosis(x):
-    """
-    Returns the kurtosis of x (calculated with the adjusted Fisher-Pearson standardized
-    moment coefficient G2).
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    if not isinstance(x, pd.Series):
-        x = pd.Series(x)
-    return pd.Series.kurtosis(x)
-
-#
-@set_property("fctype", "simple")
-def absolute_sum_of_changes(x):
-    """
-    Returns the sum over the absolute value of consecutive changes in the series x
-
-    .. math::
-
-        \\sum_{i=1, \ldots, n-1} \\mid x_{i+1}- x_i \\mid
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    return np.sum(np.abs(np.diff(x)))
-
-
-@set_property("fctype", "simple")
-def longest_strike_below_mean(x):
-    """
-    Returns the length of the longest consecutive subsequence in x that is smaller than the mean of x
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    if not isinstance(x, (np.ndarray, pd.Series)):
-        x = np.asarray(x)
-    return np.max(_get_length_sequences_where(x <= np.mean(x))) if x.size > 0 else 0
-
-
-@set_property("fctype", "simple")
-def longest_strike_above_mean(x):
-    """
-    Returns the length of the longest consecutive subsequence in x that is bigger than the mean of x
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    if not isinstance(x, (np.ndarray, pd.Series)):
-        x = np.asarray(x)
-    return np.max(_get_length_sequences_where(x >= np.mean(x))) if x.size > 0 else 0
-
-
-@set_property("fctype", "simple")
-def count_above_mean(x):
-    """
-    Returns the number of values in x that are higher than the mean of x
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    m = np.mean(x)
-    return np.where(x > m)[0].size
-
-
-@set_property("fctype", "simple")
-def count_below_mean(x):
-    """
-    Returns the number of values in x that are lower than the mean of x
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    m = np.mean(x)
-    return np.where(x < m)[0].size
-
-
-@set_property("fctype", "simple")
-def last_location_of_maximum(x):
-    """
-    Returns the relative last location of the maximum value of x.
-    The position is calculated relatively to the length of x.
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    x = np.asarray(x)
-    return 1.0 - np.argmax(x[::-1]) / len(x) if len(x) > 0 else np.NaN
-
-
-@set_property("fctype", "simple")
-def first_location_of_maximum(x):
-    """
-    Returns the first location of the maximum value of x.
-    The position is calculated relatively to the length of x.
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    if not isinstance(x, (np.ndarray, pd.Series)):
-        x = np.asarray(x)
-    return np.argmax(x) / len(x) if len(x) > 0 else np.NaN
-
-
-@set_property("fctype", "simple")
-def last_location_of_minimum(x):
-    """
-    Returns the last location of the minimal value of x.
-    The position is calculated relatively to the length of x.
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    x = np.asarray(x)
-    return 1.0 - np.argmin(x[::-1]) / len(x) if len(x) > 0 else np.NaN
-
-
-@set_property("fctype", "simple")
-def first_location_of_minimum(x):
-    """
-    Returns the first location of the minimal value of x.
-    The position is calculated relatively to the length of x.
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    if not isinstance(x, (np.ndarray, pd.Series)):
-        x = np.asarray(x)
-    return np.argmin(x) / len(x) if len(x) > 0 else np.NaN
-
-
-@set_property("fctype", "simple")
-def percentage_of_reoccurring_datapoints_to_all_datapoints(x):
-    """
-    Returns the percentage of unique values, that are present in the time series
-    more than once.
-
-        len(different values occurring more than once) / len(different values)
-
-    This means the percentage is normalized to the number of unique values,
-    in contrast to the percentage_of_reoccurring_values_to_all_values.
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    if len(x) == 0:
-        return np.nan
-
-    unique, counts = np.unique(x, return_counts=True)
-
-    if counts.shape[0] == 0:
-        return 0
-
-    return np.sum(counts > 1) / float(counts.shape[0])
-
-
-@set_property("fctype", "simple")
 def percentage_of_reoccurring_values_to_all_values(x):
     """
-    Returns the ratio of unique values, that are present in the time series
-    more than once.
-
-        # of data points occurring more than once / # of all data points
-
-    This means the ratio is normalized to the number of data points in the time series,
-    in contrast to the percentage_of_reoccurring_datapoints_to_all_datapoints.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :return: the value of this feature
@@ -1632,48 +827,11 @@ def percentage_of_reoccurring_values_to_all_values(x):
     return reoccuring_values / x.size
 
 
-@set_property("fctype", "simple")
-def sum_of_reoccurring_values(x):
-    """
-    Returns the sum of all values, that are present in the time series
-    more than once.
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    unique, counts = np.unique(x, return_counts=True)
-    counts[counts < 2] = 0
-    counts[counts > 1] = 1
-    return np.sum(counts * unique)
-
-
-@set_property("fctype", "simple")
-def sum_of_reoccurring_data_points(x):
-    """
-    Returns the sum of all data points, that are present in the time series
-    more than once.
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    unique, counts = np.unique(x, return_counts=True)
-    counts[counts < 2] = 0
-    return np.sum(counts * unique)
 
 
 @set_property("fctype", "simple")
 def ratio_value_number_to_time_series_length(x):
     """
-    Returns a factor which is 1 if all values in the time series occur only once,
-    and below one if this is not the case.
-    In principle, it just returns
-
-        # unique values / # values
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :return: the value of this feature
@@ -1692,14 +850,6 @@ def ratio_value_number_to_time_series_length(x):
 @set_property("fctype", "combiner")
 def linear_trend(x, param):
     """
-    Calculate a linear least-squares regression for the values of the time series versus the sequence from 0 to
-    length of the time series minus one.
-    This feature assumes the signal to be uniformly sampled. It will not use the time stamps to fit the model.
-    The parameters control which of the characteristics are returned.
-
-    Possible extracted attributes are "pvalue", "rvalue", "intercept", "slope", "stderr", see the documentation of
-    linregress for more information.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"attr": x} with x an string, the attribute name of the regression model
@@ -1717,18 +867,6 @@ def linear_trend(x, param):
 @set_property("fctype", "combiner")
 def cwt_coefficients(x, param):
     """
-    Calculates a Continuous wavelet transform for the Ricker wavelet, also known as the "Mexican hat wavelet" which is
-    defined by
-
-    .. math::
-        \\frac{2}{\\sqrt{3a} \\pi^{\\frac{1}{4}}} (1 - \\frac{x^2}{a^2}) exp(-\\frac{x^2}{2a^2})
-
-    where :math:`a` is the width parameter of the wavelet function.
-
-    This feature calculator takes three different parameter: widths, coeff and w. The feature calculater takes all the
-    different widths arrays and then calculates the cwt one time for each different width array. Then the values for the
-    different coefficient for coeff and width w are returned. (For each dic in param one feature is returned)
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"widths":x, "coeff": y, "w": z} with x array of int and y,z int
@@ -1762,29 +900,12 @@ def cwt_coefficients(x, param):
     return res
 
 
-
-
-
-
-
-
-
-
-
-
 # # todo - include latex formula
 # # todo - check if vectorizable
 @set_property("high_comp_cost", True)
 @set_property("fctype", "simple")
 def sample_entropy(x):
     """
-    Calculate and return sample entropy of x.
-
-    .. rubric:: References
-
-    |  [1] http://en.wikipedia.org/wiki/Sample_Entropy
-    |  [2] https://www.ncbi.nlm.nih.gov/pubmed/10843903?dopt=Abstract
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
 
@@ -1828,62 +949,9 @@ def sample_entropy(x):
     return se[0]
 
 
-
-
-
-
-@set_property("fctype", "simple")
-@set_property("minimal", True)
-def maximum(x):
-    """
-    Calculates the highest value of the time series x.
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    return np.max(x)
-
-
-@set_property("fctype", "simple")
-@set_property("minimal", True)
-def minimum(x):
-    """
-    Calculates the lowest value of the time series x.
-
-    :param x: the time series to calculate the feature of
-    :type x: numpy.ndarray
-    :return: the value of this feature
-    :return type: float
-    """
-    return np.min(x)
-
-
-
-
-
-
-
-
 @set_property("fctype", "combiner")
 def friedrich_coefficients(x, param):
     """
-    Coefficients of polynomial :math:`h(x)`, which has been fitted to
-    the deterministic dynamics of Langevin model
-
-    .. math::
-        \dot{x}(t) = h(x(t)) + \mathcal{N}(0,R)
-
-    as described by [1].
-
-    For short time-series this method is highly dependent on the parameters.
-
-    .. rubric:: References
-
-    |  [1] Friedrich et al. (2000): Physics Letters A 271, p. 217-222
-    |  *Extracting model equations from experimental data*
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"m": x, "r": y, "coeff": z} with x being positive integer, the order of polynom to fit for estimating fixed points of
@@ -1914,26 +982,12 @@ def friedrich_coefficients(x, param):
             res["m_{}__r_{}__coeff_{}".format(m, r, coeff)] = calculated[m][r][coeff]
         except IndexError:
             res["m_{}__r_{}__coeff_{}".format(m, r, coeff)] = np.NaN
-    # return [(key, value) for key, value in res.items()]
         return [value for key, value in res.items()]
 
 
 @set_property("fctype", "simple")
 def max_langevin_fixed_point(x, r, m):
     """
-    Largest fixed point of dynamics  :math:argmax_x {h(x)=0}` estimated from polynomial :math:`h(x)`,
-    which has been fitted to the deterministic dynamics of Langevin model
-
-    .. math::
-        \dot(x)(t) = h(x(t)) + R \mathcal(N)(0,1)
-
-    as described by
-
-        Friedrich et al. (2000): Physics Letters A 271, p. 217-222
-        *Extracting model equations from experimental data*
-
-    For short time-series this method is highly dependent on the parameters.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param m: order of polynom to fit for estimating fixed points of dynamics
@@ -1958,18 +1012,6 @@ def max_langevin_fixed_point(x, r, m):
 @set_property("fctype", "combiner")
 def agg_linear_trend(x, param):
     """
-    Calculates a linear least-squares regression for values of the time series that were aggregated over chunks versus
-    the sequence from 0 up to the number of chunks minus one.
-
-    This feature assumes the signal to be uniformly sampled. It will not use the time stamps to fit the model.
-
-    The parameters attr controls which of the characteristics are returned. Possible extracted attributes are "pvalue",
-    "rvalue", "intercept", "slope", "stderr", see the documentation of linregress for more information.
-
-    The chunksize is regulated by "chunk_len". It specifies how many time series values are in each chunk.
-
-    Further, the aggregation function is controlled by "f_agg", which can use "max", "min" or , "mean", "median"
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"attr": x, "chunk_len": l, "f_agg": f} with x, f an string and l an int
@@ -1984,15 +1026,11 @@ def agg_linear_trend(x, param):
     res_index = []
     x = np.array(x)
     for parameter_combination in param:
-
         chunk_len = parameter_combination["chunk_len"]
         f_agg = parameter_combination["f_agg"]
-
         aggregate_result = _aggregate_on_chunks(x, f_agg, chunk_len)
         a = aggregate_result
-        b = range(len(aggregate_result))
         a1 = pd.DataFrame(a)
-        a2 = a1.values
         if f_agg not in calculated_agg or chunk_len not in calculated_agg[f_agg]:
             if chunk_len >= len(x):
                 calculated_agg[f_agg] = {chunk_len: np.NaN}
@@ -2021,15 +1059,6 @@ def agg_linear_trend(x, param):
 @set_property("high_comp_cost", True)
 def linear_trend_timewise(x, param):
     """
-    Calculate a linear least-squares regression for the values of the time series versus the sequence from 0 to
-    length of the time series minus one.
-    This feature uses the index of the time series to fit the model, which must be of a datetime
-    dtype.
-    The parameters control which of the characteristics are returned.
-
-    Possible extracted attributes are "pvalue", "rvalue", "intercept", "slope", "stderr", see the documentation of
-    linregress for more information.
-
     :param x: the time series to calculate the feature of. The index must be datetime.
     :type x: pandas.Series
     :param param: contains dictionaries {"attr": x} with x an string, the attribute name of the regression model

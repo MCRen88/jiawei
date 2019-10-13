@@ -8,7 +8,6 @@ For the naming of the features, see :ref:`feature-naming-label`.
 
 
 from __future__ import absolute_import, division
-from builtins import range
 from past.builtins import basestring
 from tsfresh.feature_extraction import feature_calculators
 from tsfresh.utilities.string_manipulation import get_config_from_string
@@ -17,16 +16,6 @@ from tsfresh.utilities.string_manipulation import get_config_from_string
 
 def from_columns(columns, columns_to_ignore=None):
     """
-    Creates a mapping from kind names to fc_parameters objects
-    (which are itself mappings from feature calculators to settings)
-    to extract only the features contained in the columns.
-    To do so, for every feature name in columns this method
-
-    1. split the column name into col, feature, params part
-    2. decide which feature we are dealing with (aggregate with/without params or apply)
-    3. add it to the new name_to_function dict
-    4. set up the params
-
     :param columns: containing the feature names
     :type columns: list of str
     :param columns_to_ignore: columns which do not contain tsfresh feature names
@@ -80,31 +69,16 @@ def from_columns(columns, columns_to_ignore=None):
 
 class ComprehensiveFCParameters(dict):
     """
-    Create a new ComprehensiveFCParameters instance. You have to pass this instance to the
-    extract_feature instance.
-
-    It is basically a dictionary (and also based on one), which is a mapping from
-    string (the same names that are in the feature_calculators.py file) to a list of dictionary of parameters,
-    which should be used when the function with this name is called.
+    a dictionary  map from string (the same names that are in the feature_calculators.py file)
+    to a list of dictionary of parameters,which should be used when the function with this name is called.
 
     Only those strings (function names), that are keys in this dictionary, will be later used to extract
     features - so whenever you delete a key from this dict, you disable the calculation of this feature.
-
-    You can use the settings object with
-
-    # >>> from tsfresh.feature_extraction import extract_features, ComprehensiveFCParameters
-    # >>> extract_features(df, default_fc_parameters=ComprehensiveFCParameters())
-
-    to extract all features (which is the default nevertheless) or you change the ComprehensiveFCParameters
-    object to other types (see below).
     """
 
     def __init__(self):
+
         name_to_param = {}
-    #
-    #     for name, func in feature_calculators.__dict__.items():
-    #         if callable(func) and hasattr(func, "fctype") and len(getargspec(func).args) == 1:
-    #             name_to_param[name] = None
 
         name_to_param.update({
             # "time_reversal_asymmetry_statistic": [{"lag": lag} for lag in range(1, 4)],

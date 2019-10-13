@@ -16,7 +16,6 @@ from time_series_detector.feature.setting import ComprehensiveFCParameters
 
 def time_series_maximum(x):
     """
-    Calculates the highest value of the time series x.
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -27,7 +26,6 @@ def time_series_maximum(x):
 
 def time_series_minimum(x):
     """
-    Calculates the lowest value of the time series x.
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -38,7 +36,6 @@ def time_series_minimum(x):
 
 def time_series_mean(x):
     """
-    Returns the mean of x
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -49,7 +46,6 @@ def time_series_mean(x):
 
 def time_series_variance(x):
     """
-    Returns the variance of x
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -60,7 +56,6 @@ def time_series_variance(x):
 
 def time_series_standard_deviation(x):
     """
-    Returns the standard deviation of x
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -71,8 +66,6 @@ def time_series_standard_deviation(x):
 
 def time_series_skewness(x):
     """
-    Returns the sample skewness of x (calculated with the adjusted Fisher-Pearson standardized
-    moment coefficient G1).
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -83,8 +76,6 @@ def time_series_skewness(x):
 
 def time_series_kurtosis(x):
     """
-    Returns the kurtosis of x (calculated with the adjusted Fisher-Pearson standardized
-    moment coefficient G2).
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -95,7 +86,6 @@ def time_series_kurtosis(x):
 
 def time_series_median(x):
     """
-    Returns the median of x
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -106,9 +96,6 @@ def time_series_median(x):
 
 def time_series_abs_energy(x):
     """
-    Returns the absolute energy of the time series which is the sum over the squared values
-    .. math::
-        E = \\sum_{i=1,\ldots, n} x_i^2
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -119,9 +106,6 @@ def time_series_abs_energy(x):
 
 def time_series_absolute_sum_of_changes(x):
     """
-    Returns the sum over the absolute value of consecutive changes in the series x
-    .. math::
-        \\sum_{i=1, \ldots, n-1} \\mid x_{i+1}- x_i \\mid
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -132,8 +116,6 @@ def time_series_absolute_sum_of_changes(x):
 
 def time_series_variance_larger_than_std(x):
     """
-    Boolean variable denoting if the variance of x is greater than its standard deviation. Is equal to variance of x
-    being larger than 1
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -144,7 +126,6 @@ def time_series_variance_larger_than_std(x):
 
 def time_series_count_above_mean(x):
     """
-    Returns the number of values in x that are higher than the mean of x
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -155,7 +136,6 @@ def time_series_count_above_mean(x):
 
 def time_series_count_below_mean(x):
     """
-    Returns the number of values in x that are lower than the mean of x
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -166,8 +146,6 @@ def time_series_count_below_mean(x):
 
 def time_series_first_location_of_maximum(x):
     """
-    Returns the first location of the maximum value of x.
-    The position is calculated relatively to the length of x.
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -178,8 +156,6 @@ def time_series_first_location_of_maximum(x):
 
 def time_series_first_location_of_minimum(x):
     """
-    Returns the first location of the minimal value of x.
-    The position is calculated relatively to the length of x.
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -190,8 +166,6 @@ def time_series_first_location_of_minimum(x):
 
 def time_series_last_location_of_maximum(x):
     """
-    Returns the relative last location of the maximum value of x.
-    The position is calculated relatively to the length of x.
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -202,8 +176,6 @@ def time_series_last_location_of_maximum(x):
 
 def time_series_last_location_of_minimum(x):
     """
-    Returns the last location of the minimal value of x.
-    The position is calculated relatively to the length of x.
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -214,7 +186,6 @@ def time_series_last_location_of_minimum(x):
 
 def time_series_has_duplicate(x):
     """
-    Checks if any value in x occurs more than once
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -225,7 +196,6 @@ def time_series_has_duplicate(x):
 
 def time_series_has_duplicate_max(x):
     """
-    Checks if the maximum value of x is observed more than once
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -236,7 +206,6 @@ def time_series_has_duplicate_max(x):
 
 def time_series_has_duplicate_min(x):
     """
-    Checks if the minimal value of x is observed more than once
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -247,7 +216,6 @@ def time_series_has_duplicate_min(x):
 
 def time_series_longest_strike_above_mean(x):
     """
-    Returns the length of the longest consecutive subsequence in x that is bigger than the mean of x
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -258,7 +226,6 @@ def time_series_longest_strike_above_mean(x):
 
 def time_series_longest_strike_below_mean(x):
     """
-    Returns the length of the longest consecutive subsequence in x that is smaller than the mean of x
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -269,9 +236,6 @@ def time_series_longest_strike_below_mean(x):
 
 def time_series_mean_abs_change(x):
     """
-    Returns the mean over the absolute differences between subsequent time series values which is
-    .. math::
-        \\frac{1}{n} \\sum_{i=1,\ldots, n-1} | x_{i+1} - x_{i}|
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -282,9 +246,6 @@ def time_series_mean_abs_change(x):
 
 def time_series_mean_change(x):
     """
-    Returns the mean over the absolute differences between subsequent time series values which is
-    .. math::
-        \\frac{1}{n} \\sum_{i=1,\ldots, n-1}  x_{i+1} - x_{i}
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -295,11 +256,6 @@ def time_series_mean_change(x):
 
 def time_series_percentage_of_reoccurring_datapoints_to_all_datapoints(x):
     """
-    Returns the percentage of unique values, that are present in the time series
-    more than once.
-        len(different values occurring more than once) / len(different values)
-    This means the percentage is normalized to the number of unique values,
-    in contrast to the percentage_of_reoccurring_values_to_all_values.
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -310,10 +266,6 @@ def time_series_percentage_of_reoccurring_datapoints_to_all_datapoints(x):
 
 def time_series_ratio_value_number_to_time_series_length(x):
     """
-    Returns a factor which is 1 if all values in the time series occur only once,
-    and below one if this is not the case.
-    In principle, it just returns
-        # unique values / # values
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -324,8 +276,6 @@ def time_series_ratio_value_number_to_time_series_length(x):
 
 def time_series_sum_of_reoccurring_data_points(x):
     """
-    Returns the sum of all data points, that are present in the time series
-    more than once.
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -336,8 +286,6 @@ def time_series_sum_of_reoccurring_data_points(x):
 
 def time_series_sum_of_reoccurring_values(x):
     """
-    Returns the sum of all values, that are present in the time series
-    more than once.
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -348,7 +296,6 @@ def time_series_sum_of_reoccurring_values(x):
 
 def time_series_sum_values(x):
     """
-    Calculates the sum over the time series values
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -359,7 +306,6 @@ def time_series_sum_values(x):
 
 def time_series_range(x):
     """
-    Calculates the range value of the time series x.
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -367,12 +313,8 @@ def time_series_range(x):
     """
     return time_series_maximum(x) - time_series_minimum(x)
 
-# add yourself statistical features here...
-###########################################新加入的tsfresh内容##########################################
 def length(x):
     """
-    Returns the length of x
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :return: the value of this feature
@@ -382,25 +324,8 @@ def length(x):
 
 
 
-
-
-###
 def _do_extraction_on_chunk(x, default_fc_parameters = None):
     """
-    Main function of this module: use the feature calculators defined in the
-    default_fc_parameters or kind_to_fc_parameters parameters and extract all
-    features on the chunk.
-
-    The chunk consists of the chunk id, the chunk kind and the data (as a Series),
-    which is then converted to a numpy array - so a single time series.
-
-    Returned is a list of the extracted features. Each one is a dictionary consisting of
-    { "variable": the feature name in the format <kind>__<feature>__<parameters>,
-      "value": the number value of the feature,
-      "id": the id of the chunk }
-
-    The <parameters> are in the form described in :mod:`~tsfresh.utilities.string_manipulation`.
-
     :param chunk: A tuple of sample_id, kind, data
     :param default_fc_parameters: A dictionary of feature calculators.
     :param kind_to_fc_parameters: A dictionary of fc_parameters for special kinds or None.
@@ -430,11 +355,8 @@ def _do_extraction_on_chunk(x, default_fc_parameters = None):
                         continue
                 a = data
             else:
-                # a = pd.DataFrame(data)
                 a = data
-                # a = pd.DataFrame(data)
-                # b = a.values
-                # b =a
+
             if func.fctype == "combiner":
                 result = func(a, param=parameter_list)
                 # result = a
@@ -447,18 +369,13 @@ def _do_extraction_on_chunk(x, default_fc_parameters = None):
                     result = [("", func(a))]
 
 
-
             for key, item in enumerate(result):
                 feature_name = "__" + func.__name__
                 if key:
                     feature_name += "__" + str(key)
-                # yield {"variable": feature_name, "value": item} ##origin
                 yield {"{}".format(feature_name):item}
 
-                # yield {feature_name:item}
-
     return list(_f())
-    # return k_format_changed
 
 ##############################################################################################################################
 ##############################################################################################################################
@@ -501,7 +418,6 @@ def get_statistical_features(x):
         {"time_series_sum_of_reoccurring_data_points_statistical_features":time_series_sum_of_reoccurring_data_points(x)},
         {"time_series_sum_of_reoccurring_values_statistical_features":time_series_sum_of_reoccurring_values(x)},
         {"length":length(x)}]
-    # append yourself statistical features here...
     return statistical_features
 
 

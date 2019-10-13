@@ -1,28 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-"""
-特征生成函数的输入输出规范：
-    输入：list, 时间序列片段
-    输出：float or int, 该片段的特征值
-"""
+
 
 from __future__ import absolute_import, division
 
-from builtins import range
 import pandas as pd
+import numpy as np
+from builtins import range
 from scipy.signal import  find_peaks_cwt, ricker
 from scipy.stats import linregress
+from time_series_detector.common.tsd_common import DEFAULT_WINDOW
 
 
 # todo: make sure '_' works in parameter names in all cases, add a warning if not
-
-import numpy as np
-from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_series
-
-
-# todo: make sure '_' works in parameter names in all cases, add a warning if not
-
-
 
 
 __all__ = ["time_series_moving_average",
@@ -44,44 +34,12 @@ __all__ = ["time_series_moving_average",
 
 
 #####
-def time_series_moving_average(x, window_size=5):
-    x = np.array(x)
-    fea = np.mean(x[-window_size:])
-    return fea
+
+
 
 
 def _roll(a, shift):
     """
-    Roll 1D array elements. Improves the performance of numpy.roll() by reducing the overhead introduced from the
-    flexibility of the numpy.roll() method such as the support for rolling over multiple dimensions.
-
-    Elements that roll beyond the last position are re-introduced at the beginning. Similarly, elements that roll
-    back beyond the first position are re-introduced at the end (with negative shift).
-
-    Examples
-    --------
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> _roll(x, shift=2)
-    # >>> array([8, 9, 0, 1, 2, 3, 4, 5, 6, 7])
-    #
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> _roll(x, shift=-2)
-    # >>> array([2, 3, 4, 5, 6, 7, 8, 9, 0, 1])
-    #
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> _roll(x, shift=12)
-    # >>> array([8, 9, 0, 1, 2, 3, 4, 5, 6, 7])
-
-    Benchmark
-    ---------
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> %timeit _roll(x, shift=2)
-    # >>> 1.89 µs ± 341 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
-    #
-    # >>> x = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    # >>> %timeit np.roll(x, shift=2)
-    # >>> 11.4 µs ± 776 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
-
     :param a: the input array
     :type a: array_like
     :param shift: the number of places by which elements are shifted
@@ -100,12 +58,6 @@ def _roll(a, shift):
 
 def time_series_moving_average(x): ########为什么从后开始计算平均值？？？？
     """
-    Returns the difference between the last element of x and the smoothed value after Moving Average Algorithm
-    The Moving Average Algorithm is M_{n} = (x_{n-w+1}+...+x_{n})/w, where w is a parameter
-    The parameter w is chosen in {1, 6, 11, 16, 21, 26, 31, 36, 41, 46} and the set of parameters can be changed.
-
-    WIKIPEDIA: https://en.wikipedia.org/wiki/Moving_average
-
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -124,12 +76,6 @@ def time_series_moving_average(x): ########为什么从后开始计算平均值�
 
 def time_series_weighted_moving_average(x):
     """
-    Returns the difference between the last element of x and the smoothed value after Weighted Moving Average Algorithm
-    The Moving Average Algorithm is M_{n} = (1*x_{n-w+1}+...+(w-1)*x_{n-1}+w*x_{n})/w, where w is a parameter
-    The parameter w is chosen in {1, 6, 11, 16, 21, 26, 31, 36, 41, 46} and the set of parameters can be changed.
-
-    WIKIPEDIA: https://en.wikipedia.org/wiki/Moving_average
-
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -148,12 +94,6 @@ def time_series_weighted_moving_average(x):
 
 def time_series_exponential_weighted_moving_average(x):
     """
-    Returns the difference between the last element of x and the smoothed value after Exponential Moving Average Algorithm
-    The Moving Average Algorithm is s[i] = alpha * x[i] + (1 - alpha) * s[i-1], where alpha is a parameter
-    The parameter w is chosen in {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9} and the set of parameters can be changed.
-
-    WIKIPEDIA: https://en.wikipedia.org/wiki/Exponential_smoothing
-
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -177,14 +117,6 @@ def time_series_exponential_weighted_moving_average(x):
 
 def time_series_double_exponential_weighted_moving_average(x):
     """
-    Returns the difference between the last element of x and the smoothed value after Double Exponential Moving Average Algorithm
-    The Moving Average Algorithm is s[i] = alpha * x[i] + (1 - alpha) * (s[i-1] + b[i-1]), b[i] = gamma * (s[i] - s[i-1]) + (1 - gamma) * b[i-1]
-    where alpha and gamma are parameters.
-    The parameter alpha is chosen in {0.1, 0.3, 0.5, 0.7, 0.9} and the set of parameters can be changed.
-    The parameter gamma is chosen in {0.1, 0.3, 0.5, 0.7, 0.9} and the set of parameters can be changed.
-
-    WIKIPEDIA: https://en.wikipedia.org/wiki/Exponential_smoothing
-
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
     :return: the value of this feature
@@ -211,9 +143,6 @@ def time_series_double_exponential_weighted_moving_average(x):
 
 def time_series_periodic_features(data_c_left, data_c_right, data_b_left, data_b_right, data_a):
     """
-    Returns the difference between the last element of data_a and the last element of data_b_left,
-    the difference between the last element of data_a and the last element of data_c_left.
-
     :param data_c_left: the time series of historical reference data
     :type data_c_left: pandas.Series
     :param data_c_right: the time series of historical reference data
@@ -332,15 +261,6 @@ def time_series_periodic_features(data_c_left, data_c_right, data_b_left, data_b
 
 def binned_entropy(x, max_bins):
     """
-    First bins the values of x into max_bins equidistant bins.
-    Then calculates the value of
-
-    .. math::
-
-        - \\sum_{k=0}^{min(max\\_bins, len(x))} p_k log(p_k) \\cdot \\mathbf{1}_{(p_k > 0)}
-
-    where :math:`p_k` is the percentage of samples in bin :math:`k`.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param max_bins: the maximal number of bins
@@ -356,8 +276,6 @@ def binned_entropy(x, max_bins):
 
 def quantile(x, q):
     """
-    Calculates the q quantile of x. This is the value of x greater than q% of the ordered values from x.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param q: the quantile to calculate
@@ -371,12 +289,6 @@ def quantile(x, q):
 
 def change_quantiles(x, ql, qh, isabs, f_agg):
     """
-    First fixes a corridor given by the quantiles ql and qh of the distribution of x.
-    Then calculates the average, absolute value of consecutive changes of the series x inside this corridor.
-
-    Think about selecting a corridor on the
-    y-Axis and only calculating the mean of the absolute change of the time series inside this corridor.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param ql: the lower quantile of the corridor
@@ -416,10 +328,6 @@ def change_quantiles(x, ql, qh, isabs, f_agg):
 
 def number_crossing_m(x, m):
     """
-    Calculates the number of crossings of x on m. A crossing is defined as two sequential values where the first value
-    is lower than m and the next is greater, or vice-versa. If you set m to zero, you will get the number of zero
-    crossings.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param m: the threshold for the crossing
@@ -436,19 +344,6 @@ def number_crossing_m(x, m):
 
 def energy_ratio_by_chunks(x, param):
     """
-    Calculates the sum of squares of chunk i out of N chunks expressed as a ratio with the sum of squares over the whole
-    series.
-
-    Takes as input parameters the number num_segments of segments to divide the series into and segment_focus
-    which is the segment number (starting at zero) to return a feature on.
-
-    If the length of the time series is not a multiple of the number of segments, the remaining data points are
-    distributed on the bins starting from the first. For example, if your time series consists of 8 entries, the
-    first two bins will contain 3 and the last two values, e.g. `[ 0.,  1.,  2.], [ 3.,  4.,  5.]` and `[ 6.,  7.]`.
-
-    Note that the answer for `num_segments = 1` is a trivial "1" but we handle this scenario
-    in case somebody calls it. Sum of the ratios should be 1.0.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"num_segments": N, "segment_focus": i} with N, i both ints
@@ -475,19 +370,6 @@ def energy_ratio_by_chunks(x, param):
 
 def energy_ratio_by_chunks(x, param):
     """
-    Calculates the sum of squares of chunk i out of N chunks expressed as a ratio with the sum of squares over the whole
-    series.
-
-    Takes as input parameters the number num_segments of segments to divide the series into and segment_focus
-    which is the segment number (starting at zero) to return a feature on.
-
-    If the length of the time series is not a multiple of the number of segments, the remaining data points are
-    distributed on the bins starting from the first. For example, if your time series consists of 8 entries, the
-    first two bins will contain 3 and the last two values, e.g. `[ 0.,  1.,  2.], [ 3.,  4.,  5.]` and `[ 6.,  7.]`.
-
-    Note that the answer for `num_segments = 1` is a trivial "1" but we handle this scenario
-    in case somebody calls it. Sum of the ratios should be 1.0.
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"num_segments": N, "segment_focus": i} with N, i both ints
@@ -513,9 +395,6 @@ def energy_ratio_by_chunks(x, param):
 
 def _aggregate_on_chunks(x, f_agg, chunk_len):
     """
-    Takes the time series x and constructs a lower sampled version of it by applying the aggregation function f_agg on
-    consecutive chunks of length chunk_len
-
     :param x: the time series to calculate the aggregation of
     :type x: numpy.ndarray
     :param f_agg: The name of the aggregation function that should be an attribute of the pandas.Series
@@ -529,18 +408,6 @@ def _aggregate_on_chunks(x, f_agg, chunk_len):
 
 def agg_linear_trend(x, param):
     """
-    Calculates a linear least-squares regression for values of the time series that were aggregated over chunks versus
-    the sequence from 0 up to the number of chunks minus one.
-
-    This feature assumes the signal to be uniformly sampled. It will not use the time stamps to fit the model.
-
-    The parameters attr controls which of the characteristics are returned. Possible extracted attributes are "pvalue",
-    "rvalue", "intercept", "slope", "stderr", see the documentation of linregress for more information.
-
-    The chunksize is regulated by "chunk_len". It specifies how many time series values are in each chunk.
-
-    Further, the aggregation function is controlled by "f_agg", which can use "max", "min" or , "mean", "median"
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param param: contains dictionaries {"attr": x, "chunk_len": l, "f_agg": f} with x, f an string and l an int
@@ -561,9 +428,7 @@ def agg_linear_trend(x, param):
 
         aggregate_result = _aggregate_on_chunks(x, f_agg, chunk_len)
         a = aggregate_result
-        b = range(len(aggregate_result))
         a1 = pd.DataFrame(a)
-        a2 = a1.values
         if f_agg not in calculated_agg or chunk_len not in calculated_agg[f_agg]:
             if chunk_len >= len(x):
                 calculated_agg[f_agg] = {chunk_len: np.NaN}
@@ -579,7 +444,6 @@ def agg_linear_trend(x, param):
         else:
             res_data.append(getattr(calculated_agg[f_agg][chunk_len], attr))
 
-
         res_index.append("f_agg_\"{}\"__chunk_len_{}__attr_\"{}\"".format(f_agg, chunk_len, attr))
     return res_data
 
@@ -587,10 +451,6 @@ def agg_linear_trend(x, param):
 
 def number_cwt_peaks(x, n):
     """
-    This feature calculator searches for different peaks in x. To do so, x is smoothed by a ricker wavelet and for
-    widths ranging from 1 to n. This feature calculator returns the number of peaks that occur at enough width scales
-    and with sufficiently high Signal-to-Noise-Ratio (SNR)
-
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
     :param n: maximum width to consider

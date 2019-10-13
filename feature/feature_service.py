@@ -9,125 +9,12 @@ Unless required by applicable law or agreed to in writing, software distributed 
 """
 import warnings
 import statistical_features
-import fitting_features
-import classification_features
 from time_series_detector.common import tsd_common
-
-
-
-def extract_features_with_param(time_series, window):
-    # type: (object, object) -> object
-    # type: (object, object) -> object
-    """
-    Extracts three types of features from the time series.
-    :param time_series: the time series to extract the feature of
-    :type time_series: pandas.Series
-    :param window: the length of window
-    :type window: int
-    :return: the value of features
-    :return type: list with float
-    """
-    # if not tsd_common.is_standard_time_series(time_series, window):
-    #     # add your report of this error here...
-    #
-    #     return []
-
-    # spilt time_series
-    split_time_series = tsd_common.split_time_series(time_series, window)
-    normalized_split_time_series = tsd_common.normalize_time_series(split_time_series)
-    max_min_normalized_time_series = tsd_common.normalize_time_series_by_max_min(split_time_series)
-
-    s_features_with_parameter1 = statistical_features.get_parameters_features(max_min_normalized_time_series)
-    # s_features_with_parameter2 = statistical_features.get_parameters_features(normalized_split_time_series)
-    features = s_features_with_parameter1
-    return features
-#######后期做笔记
-    # s_features_with_parameter=pd.DataFrame(s_features_with_parameter)
-    # s_features_with_parameter_format_changed= []
-    # k_format_changed = pd.DataFrame(s_features_with_parameter_format_changed)
-    # for i in s_features_with_parameter.columns.tolist():
-    #     t = s_features_with_parameter.iloc[:,i].tolist()
-    #     y = pd.DataFrame(t)
-    #     s_features_with_parameter_format_changed = pd.concat([s_features_with_parameter_format_changed,y],axis=1)
-
-
-
-
-
-
-# s_features_with_parameter2 = feature_service.calculate_param_features(total_dataset.value, extract_settings)
-    # tmp = _do_extraction_on_chunk(total_dataset.value, extract_settings)
-
-
-# features = s_features
-#     return s_features_with_parameter
-#     features = s_features_with_parameter
-#     return features
-
-    # return features
-
-
-def extract_features_without_param(time_series, window):
-    # type: (object, object) -> object
-    # type: (object, object) -> object
-    """
-    Extracts three types of features from the time series.
-    :param time_series: the time series to extract the feature of
-    :type time_series: pandas.Series
-    :param window: the length of window
-    :type window: int
-    :return: the value of features
-    :return type: list with float
-    """
-    # if not tsd_common.is_standard_time_series(time_series, window):
-    #     # add your report of this error here...
-    #
-    #     return []
-
-    # spilt time_series
-    split_time_series = tsd_common.split_time_series(time_series, window)
-    split_time_series2 = tsd_common.split_time_series2(time_series, window)
-
-    # nomalize time_series
-    normalized_split_time_series = tsd_common.normalize_time_series(split_time_series)
-    max_min_normalized_time_series = tsd_common.normalize_time_series_by_max_min(split_time_series)
-    s_features = statistical_features.get_statistical_features(normalized_split_time_series[4])
-    f_features = fitting_features.get_fitting_features(normalized_split_time_series)
-    c_features = classification_features.get_classification_features(max_min_normalized_time_series)
-    # combine features with types
-    # s_features_without_parameter = statistical_features.calculate_nonparameters_features(normalized_split_time_series[4])
-    # s_features_with_parameter = statistical_features.get_parameters_features(normalized_split_time_series[4])
-    # s_features_with_parameter = statistical_features.get_parameters_features(time_series)
-
-    # features = c_features
-    #     return s_features_with_parameter
-    features = s_features + c_features + f_features
-    # features = c_features
-    return features
-
-
-
-
-import pandas as pd
-from numpy.linalg import LinAlgError
-from scipy.signal import cwt, find_peaks_cwt, ricker, welch
-from scipy.stats import linregress
-from statsmodels.tools.sm_exceptions import MissingDataError
-from statsmodels.tsa.ar_model import AR
-from statsmodels.tsa.stattools import acf, adfuller, pacf
-
-import numpy as np
-import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators
-from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_series
-# from statistical_features import time_series_mean, time_series_variance, time_series_standard_deviation, time_series_median
-
 
 
 
 
 def calculate_all_features(time_series, window):
-    # type: (object, object) -> object
-    # type: (object, object) -> object
     """
     Extracts three types of features from the time series.
     :param time_series: the time series to extract the feature of
