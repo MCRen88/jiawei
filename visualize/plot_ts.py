@@ -57,6 +57,11 @@ def plot_hist(df, detect_days = 2, plot_day_index=[1,7], anom_col = None , value
 
 
 def anomaly_view(dataset):
+    """
+
+    :param total_dataset: the dataset that contains analysis data
+    :return: a plot shows the value changed and the anomaly value
+    """
     y_train_anomaly_dataset_selcted = dataset.set_index("anomaly")
     y_train_anomaly_dataset_selcted = y_train_anomaly_dataset_selcted.loc[1]
 

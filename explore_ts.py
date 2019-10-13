@@ -27,6 +27,10 @@ FIGURE_SIZE = (16, 7)
 
 
 def run():
+    """
+
+    :return: the plots of the multiple id dataset  based on the final date
+    """
     root_dir = get_user_data_dir()
 
     original_path = join(root_dir, "706_dnm_tmp_3ZFwT#sum_iUserNum_300#20190620_16Days_valid6D_pipeline_test_input_node_train_data.csv")
@@ -50,6 +54,10 @@ def run():
         savePNG(plt, targetDir=join(pic_path, "%s.png" % l_id))
 
 def extract_selected_id_name():
+    """
+
+    :return: the id name of the selected pics in a file
+    """
     root_dir = get_user_data_dir()
     original_path = join(root_dir, "706_dnm_tmp_3ZFwT#sum_iUserNum_300#20190620_16Days_valid6D_pipeline_test_input_node_train_data.csv")
     df = pd.read_csv(original_path)
@@ -73,6 +81,10 @@ def extract_selected_id_name():
     return b
 
 def select_data():
+    """
+
+    :return: concat the data on selected id name
+    """
     selected_id = pd.read_csv('/Users/xumiaochun/jiawei/tmp/selected_name_list2.csv')
     selected_id.columns = {'selected_id'}
     root_dir = get_user_data_dir()

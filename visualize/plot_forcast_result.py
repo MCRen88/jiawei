@@ -10,23 +10,28 @@ from sklearn.metrics import precision_recall_curve
 
 
 def Precision_Recall_Curve(training_data_anomaly, anomaly_score_train,test_data_anomaly, anomaly_score_test):
+    # """
+    # Obtain values of Precision and Recall of the prediction;
+    # Draw Precision_Recall_Curve
+    #
+    # :param y_true: True binary labels.
+    #             If labels are not either {-1, 1} or {0, 1}, then pos_label should be explicitly given.
+    # :param y_pred_proba: Estimated probabilities or decision function.
+    # :param pos_label: The label of the positive class.
+    # """
     """
-    Obtain values of Precision and Recall of the prediction;
-    Draw Precision_Recall_Curve
 
-    :param y_true: True binary labels.
-                If labels are not either {-1, 1} or {0, 1}, then pos_label should be explicitly given.
-    :param y_pred_proba: Estimated probabilities or decision function.
-    :param pos_label: The label of the positive class.
+    :param training_data_anomaly: label of training dataset
+    :param anomaly_score_train: predicted anomaly score of training dataset
+    :param test_data_anomaly: label of test dataset
+    :param anomaly_score_test: predicted anomaly score of test dataset
+    :return: precision,recall,threshold of training dataset and test dataset, as well as to draw the Precision-Recall plot
     """
     # def Precision_Recall_assessed_value(precision, recall,draw_type)
     # P-R图
     precision_train, recall_train, threshold_train = precision_recall_curve(training_data_anomaly, anomaly_score_train)
     precision_test, recall_test, threshold_test = precision_recall_curve(test_data_anomaly, anomaly_score_test)
 
-    print(precision_train)
-    print(recall_train)
-    print(threshold_train)
     # plt.plot(recall,precision)
     plt.plot(recall_train,precision_train,label = 'train_precision_recall')
     # plt.plot(recall_test,precision_test,label = 'test_precision_recall')
@@ -69,6 +74,14 @@ def Precision_Recall_Curve(training_data_anomaly, anomaly_score_train,test_data_
 
 
 def plot_auc(auc_score, precision, recall, label=None):
+    """
+
+    :param auc_score: auc_score of the predict label
+    :param precision: precision of the prediction
+    :param recall: recall of the prediction
+    :param label: label
+    :return: auc curve
+    """
     plot_pr.figure(num=None, figsize=(6, 5))
     plot_pr.xlim([0.0, 1.0])
     plot_pr.ylim([0.0, 1.0])
@@ -82,6 +95,12 @@ def plot_auc(auc_score, precision, recall, label=None):
 
 
 def anomaly_score_view_date(dataset,target_date):
+    """
+
+    :param total_dataset: the dataset that contains analysis data
+    :param target_date: a date among the dataset, to determine the difference of the predict value and the label
+    :return: a plot that determine whether there are differences between the predict value and the label based on date
+    """
     fig = plt.figure()
     ax = fig.add_subplot(111)
     total_dataset_Date_index = dataset
@@ -110,6 +129,11 @@ def anomaly_score_view_date(dataset,target_date):
     plt.show()
 
 def anomaly_score_view_predict(dataset):
+    """
+
+    :param total_dataset: the dataset that contains analysis data
+    :return: a plot that shows predict value and the label
+    """
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -136,6 +160,11 @@ def anomaly_score_view_predict(dataset):
 
 
 def anomaly_predict_view(dataset):
+    """
+
+    :param total_dataset: the dataset that contains analysis data
+    :return: a plot that determine whether there are differences between the predict value and the label
+    """
     anomaly_flag = dataset.set_index("anomaly")
     anomaly_flag = anomaly_flag.loc[1]
     anomaly_pridict = dataset.set_index("anomaly_pred")
@@ -150,52 +179,3 @@ def anomaly_predict_view(dataset):
     plt.title('Anomaly Predict View')
 
     plt.show()
-
-##应该修改成自动加减时间
-def day_based_changed_proba_predict(target_date1,target_date2, target_date3):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    total_dataset_Date_index = total_dataset
-    total_dataset_Date_index = total_dataset_Date_index.set_index('Date')
-    total_dataset_Date_index.index = pd.DatetimeIndex(total_dataset_Date_index.index)
-
-
-    line_name1 = 'Line_{}'.format(target_date1)
-    line_name2 = 'Line_{}'.format(target_date2)
-    line_name3 = 'Line_{}'.format(target_date3)
-    # yesterday = target_date - datetime.timedelta(days = 1).strftime('%Y-%m-%d')
-    # lastweek = target_date - datetime.timedelta(days = 7).strftime('%Y-%m-%d')
-    line1 = total_dataset_Date_index.loc[target_date1] ##12。24为基准
-    line2 = total_dataset_Date_index.loc[target_date2] ##12。24为基准
-    line3 = total_dataset_Date_index.loc[target_date3] ##12。24为基准
-    ax.plot(line1.Hour_Minute, line1.value, color = 'red',  label=line_name1,alpha = 0.4)
-    ax.plot(line2.Hour_Minute, line2.value, color = 'green',  label=line_name2,alpha = 0.4)
-    ax.plot(line3.Hour_Minute, line3.value, color = 'blue',  label=line_name3,alpha = 0.4)
-    if len(line1.loc[line1['anomaly']== 1])>0:
-        line_anomaly = line1.loc[line1['anomaly']== 1]
-        ax.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red', label='{}'.format(line_name1))
-    if len(line2.loc[line2['anomaly']== 1])>0:
-        line_anomaly = line2.loc[line2['anomaly']== 1]
-        ax.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red', label='{}'.format(line_name2))
-    if len(line3.loc[line3['anomaly']== 1])>0:
-        line_anomaly = line3.loc[line3['anomaly']== 1]
-        ax.scatter(np.array(line_anomaly.Hour_Minute),line_anomaly.value, marker='+',color = 'red', label='{}'.format(line_name3))
-
-
-    ax2 = ax.twinx()
-    # lns3 = ax2.plot(line1.Hour_Minute, line1.y_proba_pred_total, label = 'Anomaly Score')
-    # lns = lns1+lns2+lns3
-    # labs = [l.get_label() for l in lns]
-    # ax.legend(lns, labs, bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0)
-    # ax.legend(bbox_to_anchor=(1.0, 0.05), loc=3, borderaxespad=0)
-    ax.legend(loc = 'best')
-    ax2.legend(loc = 'best')
-    plt.xticks(rotation=30)
-    ax.set_xlabel("Time (h)")
-    ax.set_ylabel("Value changed")
-    # ax2.set_ylabel("Probability Anomaly Score")
-    # ax2.set_ylim(0, 1)
-    plt.xticks(rotation = 30)
-    plt.title('{} Day-based Comparison (with yesterday and last week)'.format(target_date1))
-
-    plt.show() ##still in main

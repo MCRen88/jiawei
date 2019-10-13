@@ -50,10 +50,6 @@ from visualize.plot_stable_view import value_stable_determinate_view
 
 def data_modeling_gbdt(x_selected,y):
     '''
-    This func utilizing gbdt to model the x_selected and Label data, and predict the percentage of anomaly and also,
-    the results of anomaly. It is worth to know that there has the threshould to distinct to what percentage the results should
-    be regarded as anomaly.
-
     :param x_selected: selected features dataset
     :param y: Label data (or Flag)
     :return: y_pred(not DF), represents whether the predicte value would be 0 or 1(anomaly)
@@ -73,6 +69,7 @@ def data_modeling_gbdt(x_selected,y):
 
 
 def circulation_file_predict_origin_features_select_methods(total_dataset):
+
     #思路
     ##先进行绘图：1、曲线和异常点的图；2、观察某个随机日期的数据（自行输入日期），得到前一天；上一周和本周的异常情况
     ##先进行特征计算

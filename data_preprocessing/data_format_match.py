@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 # -*- coding=utf-8 -*-
 
-import time
 import pandas as pd
 from utils import millisec_to_str
 
 def characteristics_format_match(total_dataset):
+    """
+
+    :param total_dataset: the dataset that contains analysis data
+    :return: the input dataset which has match the type, name and order of specific features
+    """
     # total_dataset.rename(columns={"timestamp":"timestamps", "is_anomaly":"anomaly","point":"value"}, inplace=True)
     ##--1。时间处理格式，顺序--##
     total_dataset['timestamps'] = total_dataset['timestamps'].map(millisec_to_str)

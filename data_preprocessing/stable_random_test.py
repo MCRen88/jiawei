@@ -10,6 +10,11 @@ from statsmodels.stats.diagnostic import acorr_ljungbox
 
 ##平稳性测试
 def adf_(timeseries): # adf_ 检验平稳性
+    """
+
+    :param timeseries: time series that aims to analyse
+    :return: the values of the adfuller test and critical test, in order to determine whether the time series is stable or not
+    """
     adf_test = unitroot_adf(timeseries)
     adf_test_value = adf_test[0]
     adfuller_value = pd.DataFrame({key:value for key,value in adf_test[4].items()},index = [0])
@@ -19,6 +24,11 @@ def adf_(timeseries): # adf_ 检验平稳性
 
 
 def kpss_(timeseries): #kpss检验平稳性
+    """
+
+    :param timeseries: time series that aims to analyse
+    :return: the values of the kpss test and critical test, in order to determine whether the time series is stable or not
+    """
     kpss_test = kpss(timeseries)
     kpss_test_value = kpss_test[0]
     kpss_value = pd.DataFrame({key:value for key,value in kpss_test[3].items()},index = [0])
@@ -27,11 +37,21 @@ def kpss_(timeseries): #kpss检验平稳性
     return kpss_test_value, kpss_critical_value
 
 def acorr_ljungbox_(timeseries):
+    """
+
+    :param timeseries: time series that aims to analyse
+    :return: the values of the acorr ljungbox_test, in order to determine whether the time series is random or not
+    """
     a = acorr_ljungbox(timeseries, lags=1)
     return a[1][0] ### return 检验结果的 p_value值
 
 
 def model_makesense_determinate (total_dataset):
+    """
+
+    :param total_dataset: the dataset that contains analysis data
+    :return: transform the umstabled dataset to a new one that is stabled.
+    """
     adf_test_value, adf_critical_value = adf_(total_dataset.value)
     kpss_test_value, kpss_critical_value = kpss_(total_dataset.value)
     if adf_test_value > adf_critical_value and kpss_test_value > kpss_critical_value: ##说明值小于任何一个%，也就是说序列是不平稳序列，需要进行差分处理
