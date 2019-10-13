@@ -174,6 +174,10 @@ def time_series_window_parts_value_distribution_with_threshold(x):
 
 
 def get_classification_features(x):
+    """
+    :param x: splited time series normalized by maximun and minimum value
+    :return: list of some local anomaly features and morphological features
+    """
     classification_features =[
 
         {"time_series_autocorrelation_classification":time_series_autocorrelation(x)},
@@ -181,8 +185,6 @@ def get_classification_features(x):
     ]
     classification_features.extend(time_series_value_distribution(x))
     classification_features.extend(time_series_daily_parts_value_distribution(x))
-
-
     classification_features.extend(time_series_daily_parts_value_distribution_with_threshold(x))
     classification_features.extend(time_series_window_parts_value_distribution_with_threshold(x))
     classification_features.extend(time_series_binned_entropy(x))

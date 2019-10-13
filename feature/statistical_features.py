@@ -387,6 +387,11 @@ def _do_extraction_on_chunk(x, default_fc_parameters = None):
 
 #
 def get_statistical_features(x):
+    """
+
+    :param x: normalized splited time series
+    :return: list of statistical features
+    """
     statistical_features = [
         {"time_series_maximum_statistical_features":time_series_maximum(x)},
         {"time_series_minimum_statistical_features":time_series_minimum(x)},
@@ -426,6 +431,12 @@ def get_statistical_features(x):
 
 #
 def get_parameters_features(x, default_fc_parameters=None):
+    """
+
+    :param x:
+    :param default_fc_parameters:
+    :return:
+    """
     if default_fc_parameters is None:
         default_fc_parameters = ComprehensiveFCParameters()
     k = _do_extraction_on_chunk(x)
