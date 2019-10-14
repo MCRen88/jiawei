@@ -1,4 +1,5 @@
-
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 
 
 from feature.setting import ComprehensiveFCParameters,ComprehensiveFCParameters_feature_anom\
@@ -8,7 +9,6 @@ import time_series_detector.feature.feature_calculators_withoutparam as ts_featu
 import feature.feature_anom as feature_anom
 import feature.feature_pattern as feature_pattern
 import feature.feature_stat as feature_stat
-import pandas as pd
 
 #############################################--s_features_with_parameter1--##########################################################
 
