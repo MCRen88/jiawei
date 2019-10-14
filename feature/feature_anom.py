@@ -58,6 +58,7 @@ def _roll(a, shift):
     idx = shift % len(a)
     return np.concatenate([a[-idx:], a[:-idx]])
 
+<<<<<<< HEAD
 #
 #
 # @set_property("fctype", "simple")
@@ -128,6 +129,100 @@ def _roll(a, shift):
 #     return s[-1] - x[-1]
 
 @set_property("fctype", "combiner")
+=======
+
+
+
+def time_series_moving_average(x, w=5): ########为什么从后开始计算平均值？？？？
+    """
+    :param x: the time series to calculate the feature of
+    :type x: pandas.Series
+    :return: the value of this feature
+    :return type: list with float
+    """
+
+    # list = []
+    # for w in range(1, min(50, DEFAULT_WINDOW), 5):
+    temp = np.mean(x[-w:])
+    temp__ = temp - x[-1]
+        # name = ("statistical_time_series_moving_average_{}".format(w))
+        # list.append({'{}'.format(name):temp__})
+
+    return temp__
+
+
+def time_series_weighted_moving_average(x):
+    """
+    :param x: the time series to calculate the feature of
+    :type x: pandas.Series
+    :return: the value of this feature
+    :return type: list with float
+    """
+
+    list = []
+    for w in range(1, min(50, DEFAULT_WINDOW), 5):
+        w = min(len(x), w)
+        coefficient = np.array(range(1, w + 1))
+        temp__ = ((np.dot(coefficient, x[-w:])) / float(w * (w + 1) / 2)) - x[-1]
+        name = ("statistical_time_series_weighted_moving_average_{}".format(w))
+        list.append({'{}'.format(name):temp__})
+    return list
+
+
+
+
+
+
+def time_series_exponential_weighted_moving_average(x):
+    """
+    :param x: the time series to calculate the feature of
+    :type x: pandas.Series
+    :return: the value of this feature
+    :return type: list with float
+    """
+
+    list = []
+    for j in range(1, 10):
+        alpha = j / 10.0
+        s = [x[0]]
+        for i in range(1, len(x)):
+            temp = alpha * x[i] + (1 - alpha) * s[-1]
+            s.append(temp)
+            temp__ = s[-1] - x[-1]
+            name = ("statistical_time_series_exponential_weighted_moving_average_j{}_i{}".format(j,i))
+            list.append({'{}'.format(name):temp__})
+    return list
+
+
+
+
+def time_series_double_exponential_weighted_moving_average(x):
+    """
+    :param x: the time series to calculate the feature of
+    :type x: pandas.Series
+    :return: the value of this feature
+    :return type: list with float
+    """
+    list = []
+    for j1 in range(1, 10, 2):
+        for j2 in range(1, 10, 2):
+            alpha = j1 / 10.0
+            gamma = j2 / 10.0
+            s = [x[0]]
+            b = [(x[3] - x[0]) / 3]  # s is the smoothing part, b is the trend part ######？？？？？？(x[2]-x[0])/3???
+            for i in range(1, len(x)):
+                temp1 = alpha * x[i] + (1 - alpha) * (s[-1] + b[-1]) ####?????加(s[i-1] + b[i-1])
+                s.append(temp1)
+                temp2 = gamma * (s[-1] - s[-2]) + (1 - gamma) * b[-1]  ####?????gamma * (s[i-1] - s[i-2]) + (1 - gamma) * b[i-1]
+                b.append(temp2)
+                temp__ = s[-1] - x[-1]
+                name = ("statistical_time_series_double_exponential_weighted_moving_average_j1{}_j2{}_i{}".format(j1,j2,i))
+                list.append({'{}'.format(name):temp__})
+    return list
+
+
+
+>>>>>>> 9c977fcaa1d3cffd429cd8d8d97e4bdf055a6806
 def time_series_periodic_features(data_c_left, data_c_right, data_b_left, data_b_right, data_a):
     """
     :param data_c_left: the time series of historical reference data
@@ -183,6 +278,7 @@ def time_series_periodic_features(data_c_left, data_c_right, data_b_left, data_b
     return periodic_features
 
 
+<<<<<<< HEAD
 # #
 # @set_property("fctype", "simple")
 # def binned_entropy(x, max_bins):
@@ -362,3 +458,48 @@ def time_series_periodic_features(data_c_left, data_c_right, data_b_left, data_b
 #     :return type: int
 #     """
 #     return len(find_peaks_cwt(vector=x, widths=np.array(list(range(1, n + 1))), wavelet=ricker))
+=======
+        if chunk_len >= len(x):
+            res_data.append(np.NaN)
+        else:
+            res_data.append(getattr(calculated_agg[f_agg][chunk_len], attr))
+
+        res_index.append("f_agg_\"{}\"__chunk_len_{}__attr_\"{}\"".format(f_agg, chunk_len, attr))
+    return res_data
+
+
+
+def number_cwt_peaks(x, n):
+    """
+    :param x: the time series to calculate the feature of
+    :type x: numpy.ndarray
+    :param n: maximum width to consider
+    :type n: int
+    :return: the value of this feature
+    :return type: int
+    """
+    return len(find_peaks_cwt(vector=x, widths=np.array(list(range(1, n + 1))), wavelet=ricker))
+
+
+f_router = {
+"time_series_moving_average": time_series_moving_average, 
+"time_series_weighted_moving_average":time_series_weighted_moving_average
+}
+
+
+if __name__ == "__main__":
+    ts_list = np.arrange(1440 *7)
+    window_size =10
+    feature_list = ["time_series_moving_average",
+           "time_series_weighted_moving_average",]
+    f_result = {}
+    for w_ind in range(0, min(ts_list.size - window_size)):
+        w = ts_list[w_ind: window_size + w_ind]
+        for fea_name in feature_list:
+            fea_cal = globals()[fea_name]
+            f_value = fea_cal(w)
+            f_result[f] = f_value 
+
+
+
+>>>>>>> 9c977fcaa1d3cffd429cd8d8d97e4bdf055a6806
