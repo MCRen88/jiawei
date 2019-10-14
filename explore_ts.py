@@ -26,7 +26,7 @@ FIGURE_SIZE = (16, 7)
 
 
 
-def run():
+def gen_pic():
     """
 
     :return: the plots of the multiple id dataset  based on the final date
