@@ -56,7 +56,7 @@ def _roll(a, shift):
 
 
 
-def time_series_moving_average(x): ########为什么从后开始计算平均值？？？？
+def time_series_moving_average(x, w=5): ########为什么从后开始计算平均值？？？？
     """
     :param x: the time series to calculate the feature of
     :type x: pandas.Series
@@ -64,14 +64,14 @@ def time_series_moving_average(x): ########为什么从后开始计算平均值�
     :return type: list with float
     """
 
-    list = []
-    for w in range(1, min(50, DEFAULT_WINDOW), 5):
-        temp = np.mean(x[-w:])
-        temp__ = temp - x[-1]
-        name = ("statistical_time_series_moving_average_{}".format(w))
-        list.append({'{}'.format(name):temp__})
+    # list = []
+    # for w in range(1, min(50, DEFAULT_WINDOW), 5):
+    temp = np.mean(x[-w:])
+    temp__ = temp - x[-1]
+        # name = ("statistical_time_series_moving_average_{}".format(w))
+        # list.append({'{}'.format(name):temp__})
 
-    return list
+    return temp__
 
 
 def time_series_weighted_moving_average(x):
@@ -90,6 +90,10 @@ def time_series_weighted_moving_average(x):
         name = ("statistical_time_series_weighted_moving_average_{}".format(w))
         list.append({'{}'.format(name):temp__})
     return list
+
+
+
+
 
 
 def time_series_exponential_weighted_moving_average(x):
@@ -459,3 +463,26 @@ def number_cwt_peaks(x, n):
     :return type: int
     """
     return len(find_peaks_cwt(vector=x, widths=np.array(list(range(1, n + 1))), wavelet=ricker))
+
+
+f_router = {
+"time_series_moving_average": time_series_moving_average, 
+"time_series_weighted_moving_average":time_series_weighted_moving_average
+}
+
+
+if __name__ == "__main__":
+    ts_list = np.arrange(1440 *7)
+    window_size =10
+    feature_list = ["time_series_moving_average",
+           "time_series_weighted_moving_average",]
+    f_result = {}
+    for w_ind in range(0, min(ts_list.size - window_size)):
+        w = ts_list[w_ind: window_size + w_ind]
+        for fea_name in feature_list:
+            fea_cal = globals()[fea_name]
+            f_value = fea_cal(w)
+            f_result[f] = f_value 
+
+
+
