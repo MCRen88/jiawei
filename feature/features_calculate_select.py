@@ -122,7 +122,7 @@ def feature_extraction(total_dataset,window):
     :return: dataset of features that might be relevant to the label, label, name of the selected features
     """
     ##先进行特征计算
-    x_features_calculate,y_calculate = combine_features_calculate (total_dataset, window)
+    x_features_calculate,y_calculate = combine_features_calculate (total_dataset, window,DAY_PNT)
     #再进行特征选择
     x_features_selected = features_selected_ExtraTreesClassifier(x_features_calculate, y_calculate)
     selected_features_name, x_features_selected = selected_columns_names(x_features_calculate, x_features_selected)
@@ -155,3 +155,4 @@ def cal_features_based_on_id(id_dataset,window,id_name):
     # new_dataset1 = pd.concat([calculate_features,label],axis=1)
 
     return calculate_features,label
+
