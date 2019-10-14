@@ -6,6 +6,8 @@ from feature.setting import ComprehensiveFCParameters,ComprehensiveFCParameters_
 import warnings
 import time_series_detector.feature.feature_calculators_withoutparam as ts_feature_calculators_without_param
 import feature.feature_anom as feature_anom
+import feature.feature_pattern as feature_pattern
+import feature.feature_stat as feature_stat
 import pandas as pd
 
 #############################################--s_features_with_parameter1--##########################################################
@@ -180,7 +182,7 @@ def _do_extraction_on_chunk_feature_pattern(x, default_fc_parameters = None, kin
 
     def _f():
         for function_name, parameter_list in fc_parameters.items():
-            func = getattr(feature_anom, function_name)
+            func = getattr(feature_pattern, function_name)
 
             # If the function uses the index, pass is at as a pandas Series.
             # Otherwise, convert to numpy array
@@ -218,12 +220,6 @@ def _do_extraction_on_chunk_feature_pattern(x, default_fc_parameters = None, kin
                               parameter_list)
                 else:
                     result = (func(a))
-            elif func.fctype == "test":
-                if parameter_list:
-                    result = (func(a, **param) for param in
-                              parameter_list)
-                else:
-                    result = func(a)
 
 
             for key, item in enumerate(result):
@@ -265,7 +261,7 @@ def _do_extraction_on_chunk_feature_stat(x, default_fc_parameters = None, kind_t
 
     def _f():
         for function_name, parameter_list in fc_parameters.items():
-            func = getattr(feature_anom, function_name)
+            func = getattr(feature_stat, function_name)
 
             # If the function uses the index, pass is at as a pandas Series.
             # Otherwise, convert to numpy array
@@ -319,7 +315,7 @@ def _do_extraction_on_chunk_feature_stat(x, default_fc_parameters = None, kind_t
 
     return list(_f())
 
-def get_classification_feature_pattern(x, default_fc_parameters=None,kind_to_fc_parameters = None):
+def get_classification_feature_stat(x, default_fc_parameters=None,kind_to_fc_parameters = None):
     """
 
     :param x:

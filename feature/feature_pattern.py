@@ -68,21 +68,37 @@ def _roll(a, shift):
         a = np.asarray(a)
     idx = shift % len(a)
     return np.concatenate([a[-idx:], a[:-idx]])
-
+#
 @set_property("fctype", "simple")
-def time_series_autocorrelation(x):
+def autocorrelation(x, lag):
     """
     :param x: the time series to calculate the feature of
-    :type x: pandas.Series
+    :type x: numpy.ndarray
     :param lag: the lag
     :type lag: int
     :return: the value of this feature
     :return type: float
     """
-    lag = int((len(x) - 3) / 5)
-    if np.sqrt(np.var(x)) < 1e-10:
-        return 0
-    return ts_feature_calculators.autocorrelation(x, lag)
+    # This is important: If a series is passed, the product below is calculated
+    # based on the index, which corresponds to squaring the series.
+    if type(x) is pd.Series:
+        x = x.values
+    if len(x) < lag:
+        return np.nan
+    # Slice the relevant subseries based on the lag
+    y1 = x[:(len(x)-lag)]
+    y2 = x[lag:]
+    # Subtract the mean of the whole series x
+    x_mean = np.mean(x)
+    # The result is sometimes referred to as "covariation"
+    sum_product = np.sum((y1 - x_mean) * (y2 - x_mean))
+    # Return the normalized unbiased covariance
+    v = np.var(x)
+    if np.isclose(v, 0):
+        return np.NaN
+    else:
+        return sum_product / ((len(x) - lag) * v)
+
 
 
 @set_property("fctype", "simple")
@@ -269,7 +285,7 @@ def sample_entropy(x):
         ts1 = x[i]
         for jj in range(nj):
             j = jj + i + 1
-            if abs(x[j] - ts1) < tolerance:  # distance between two vectors
+            if abs(x[j] - ts1).all() < tolerance:  # distance between two vectors
                 curr[jj] = prev[jj] + 1
                 temp_ts_length = min(sample_length, curr[jj])
                 for m in range(int(temp_ts_length)):

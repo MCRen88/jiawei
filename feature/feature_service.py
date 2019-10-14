@@ -14,6 +14,7 @@ import classification_features
 import fitting_features
 from time_series_detector.common import tsd_common
 import feature_calculate
+import feature_anom
 
 
 def calculate_all_features(time_series, window):
@@ -37,6 +38,12 @@ def calculate_all_features(time_series, window):
     # s_features_with_parameter1 = feature_calculate.get_parameters_features(max_min_normalized_time_series)
 
     # features = s_features + c_features + f_features + s_features_with_parameter1
-    c_features = feature_calculate.get_classification_features_test(max_min_normalized_time_series)
-    features = c_features
+
+
+
+    # anom_feature = feature_calculate.get_classification_features_test(normalized_split_time_series)
+    # pattern_feature = feature_calculate.get_classification_feature_pattern(max_min_normalized_time_series)
+    stat_feature = feature_calculate.get_classification_feature_stat(max_min_normalized_time_series)
+    features = stat_feature
     return features
+

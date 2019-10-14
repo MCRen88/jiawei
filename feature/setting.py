@@ -24,7 +24,8 @@ from itertools import product
 
 # from time_series_detector.feature import feature_calculators
 import feature.feature_anom as feature_anom
-
+import feature.feature_pattern as feature_pattern
+import feature.feature_stat as feature_stat
 def from_columns(columns, columns_to_ignore=None):
     """
     Creates a mapping from kind names to fc_parameters objects
@@ -228,13 +229,13 @@ class ComprehensiveFCParameters_feature_pattern(dict):
     def __init__(self):
         name_to_param = {}
     #
-        for name, func in feature_anom.__dict__.items():
+        for name, func in feature_pattern.__dict__.items():
             if callable(func) and hasattr(func, "fctype") and len(getargspec(func).args) == 1:
                 name_to_param[name] = None
 
 
         name_to_param.update({
-
+        #
         "time_reversal_asymmetry_statistic": [{"lag": lag} for lag in range(1, 4)],
         "c3": [{"lag": lag} for lag in range(1, 4)],
         "cid_ce": [{"normalize": True}, {"normalize": False}],
@@ -246,12 +247,11 @@ class ComprehensiveFCParameters_feature_pattern(dict):
                              width in [(2, 5, 10, 20)] for coeff in range(15) for w in (2, 5, 10, 20)],
         "spkt_welch_density": [{"coeff": coeff} for coeff in [2, 5, 8]],
         "ar_coefficient": [{"coeff": coeff, "k": k} for coeff in range(5) for k in [10]],
-
+        #
         "fft_coefficient": [{"coeff": k, "attr": a} for a, k in product(["real", "imag", "abs", "angle"], range(100))],
         "approximate_entropy": [{"m": 2, "r": r} for r in [.1, .3, .5, .7, .9]],
         "linear_trend": [{"attr": "pvalue"}, {"attr": "rvalue"}, {"attr": "intercept"},
                          {"attr": "slope"}, {"attr": "stderr"}],
-
         "linear_trend_timewise": [{"attr": "pvalue"}, {"attr": "rvalue"}, {"attr": "intercept"},
                                   {"attr": "slope"}, {"attr": "stderr"}]
         })
@@ -282,7 +282,7 @@ class ComprehensiveFCParameters_feature_stat(dict):
     def __init__(self):
         name_to_param = {}
     #
-        for name, func in feature_anom.__dict__.items():
+        for name, func in feature_stat.__dict__.items():
             if callable(func) and hasattr(func, "fctype") and len(getargspec(func).args) == 1:
                 name_to_param[name] = None
 
