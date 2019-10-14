@@ -168,21 +168,28 @@ if __name__ == "__main__":
     selected_id = np.unique(total_dataset.line_id)
 
     new_dataset = []
-    selected_calculate_features = []
-    selected_label = []
-    for j in range(0,len(selected_id)):
+    calculate_features = []
+    labels = []
+    # for j in range(0,len(selected_id)):
+    for j in range(0, 5):
         id_name = selected_id[j]
         id_dataset = total_dataset[total_dataset['line_id'] == id_name]
         cal_features,y_calculate = cal_features_based_on_id(id_dataset,window,id_name)
-        selected_calculate_features.append(cal_features)
-        selected_label.append(y_calculate)
-        break
+        calculate_features.append(cal_features)
+        labels.append(y_calculate)
 
-    selected_calculate_features = pd.concat(selected_calculate_features)
-    selected_label = pd.concat(selected_label)
-    print selected_calculate_features
-    print selected_calculate_features.columns.tolist()
-#
+    calculate_features = pd.concat(calculate_features)
+    labels = pd.concat(labels)
+
+    calculate_features = calculate_features.replace([np.inf, -np.inf], np.nan).dropna()
+    selected_features = features_selected_ExtraTreesClassifier(calculate_features,labels.anomaly)
+    y_pred_train, anomaly_score_train = data_modeling_gbdt(selected_features, labels.anomaly)
+    predict_report_train = classification_report(labels.anomaly, y_pred_train, labels=[1, 2, 3])
+    print predict_report_train
+
+##
+
+
 # #数据特征提取要based整个数据集combine_features_calculate（所有id）；；
 #
 #
@@ -194,7 +201,7 @@ if __name__ == "__main__":
 #
 #     # total_dataset= model_makesense_determinate (total_dataset)
 #
-#     # list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
+    # list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
 #
 #     #
 #     # #
