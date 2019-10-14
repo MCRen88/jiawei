@@ -1046,7 +1046,6 @@ def agg_linear_trend(x, param):
         else:
             res_data.append(getattr(calculated_agg[f_agg][chunk_len], attr))
 
-
         res_index.append("f_agg_\"{}\"__chunk_len_{}__attr_\"{}\"".format(f_agg, chunk_len, attr))
     return res_data
 #

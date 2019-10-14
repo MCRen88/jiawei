@@ -57,7 +57,7 @@ def combine_features_calculate (data, window,DAY_PNT):
         t = k.iloc[:, i].tolist()
         y = pd.DataFrame(t)
         k_format_changed = pd.concat([k_format_changed, y], axis=1)
-    k_format_changed = k_format_changed.astype('float64')
+    # k_format_changed = k_format_changed.astype('float64')
     k_format_changed = k_format_changed.fillna(0)
     k_format_changed = k_format_changed.ix[:, ~((k_format_changed==0).all())] ##delete the columns that is all 0 values
     k_format_changed = k_format_changed.ix[:, ~((k_format_changed==1).all())] ##delete the columns that is all 1 values
@@ -126,7 +126,6 @@ def feature_extraction(total_dataset,window):
     #再进行特征选择
     x_features_selected = features_selected_ExtraTreesClassifier(x_features_calculate, y_calculate)
     selected_features_name, x_features_selected = selected_columns_names(x_features_calculate, x_features_selected)
-    # print x_features_selected.columns.tolist()
     return x_features_selected, y_calculate, selected_features_name
 
 def cal_features_based_on_id(id_dataset,window,id_name):
@@ -134,7 +133,7 @@ def cal_features_based_on_id(id_dataset,window,id_name):
     :param id_dataset:  selected id dataset of a multiple id dataset
     :param window: length of sliding window
     :param id_name: name of the selected id
-    :return: a new dataset(DF) that contains id, calculate features and labels of the selected id dataset
+    :return: calculated features and their labels with id name
     """
     ##先进行特征计算
     # x_features_calculate,y_calculate = combine_features_calculate (id_dataset, window,DAY_PNT)
@@ -145,13 +144,14 @@ def cal_features_based_on_id(id_dataset,window,id_name):
     DAY_PNT = len(id_dataset.loc[id_dataset['Date'] == id_dataset['Date'].ix[len(id_dataset)/2]])
     win_sli = window + 7 * DAY_PNT
     x_features_calculate,y_calculate = combine_features_calculate (id_dataset, window,DAY_PNT)
-    x_features_calculate["id"] = id_name
+    y_calculate["id"] = id_name
     calculate_features.append([x_features_calculate])
     label.append([y_calculate])
 
     calculate_features = pd.concat([x_features_calculate])
+    calculate_features = calculate_features.reset_index(drop=True)
     label = pd.concat([y_calculate])
     label= label.reset_index(drop = True)
-    new_dataset1 = pd.concat([calculate_features,label],axis=1)
+    # new_dataset1 = pd.concat([calculate_features,label],axis=1)
 
-    return new_dataset1
+    return calculate_features,label

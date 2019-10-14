@@ -74,6 +74,18 @@ def _roll(a, shift):
     idx = shift % len(a)
     return np.concatenate([a[-idx:], a[:-idx]])
 
+def set_property(key, value):
+    """
+    This method returns a decorator that sets the property key of the function to value
+    """
+    def decorate_func(func):
+        setattr(func, key, value)
+        if func.__doc__ and key == "fctype":
+            func.__doc__ = func.__doc__ + "\n\n    *This function is of type: " + value + "*\n"
+        return func
+    return decorate_func
+
+@set_property("fctype", "simple")
 def time_series_maximum(x):
     """
     :param x: the time series to calculate the feature of
@@ -83,7 +95,7 @@ def time_series_maximum(x):
     """
     return ts_feature_calculators.maximum(x)
 
-
+@set_property("fctype", "simple")
 def time_series_minimum(x):
     """
     :param x: the time series to calculate the feature of
@@ -93,7 +105,7 @@ def time_series_minimum(x):
     """
     return ts_feature_calculators.minimum(x)
 
-
+@set_property("fctype", "simple")
 def time_series_mean(x):
     """
     :param x: the time series to calculate the feature of
@@ -103,7 +115,7 @@ def time_series_mean(x):
     """
     return ts_feature_calculators.mean(x)
 
-
+@set_property("fctype", "simple")
 def time_series_variance(x):
     """
     :param x: the time series to calculate the feature of
@@ -113,7 +125,7 @@ def time_series_variance(x):
     """
     return ts_feature_calculators.variance(x)
 
-
+@set_property("fctype", "simple")
 def time_series_standard_deviation(x):
     """
     :param x: the time series to calculate the feature of
@@ -123,7 +135,7 @@ def time_series_standard_deviation(x):
     """
     return ts_feature_calculators.standard_deviation(x)
 
-
+@set_property("fctype", "simple")
 def time_series_skewness(x):
     """
     :param x: the time series to calculate the feature of
@@ -133,7 +145,7 @@ def time_series_skewness(x):
     """
     return ts_feature_calculators.skewness(x)
 
-
+@set_property("fctype", "simple")
 def time_series_kurtosis(x):
     """
     :param x: the time series to calculate the feature of
@@ -143,7 +155,7 @@ def time_series_kurtosis(x):
     """
     return ts_feature_calculators.kurtosis(x)
 
-
+@set_property("fctype", "simple")
 def time_series_median(x):
     """
     :param x: the time series to calculate the feature of
@@ -153,7 +165,7 @@ def time_series_median(x):
     """
     return ts_feature_calculators.median(x)
 
-
+@set_property("fctype", "simple")
 def time_series_abs_energy(x):
     """
     :param x: the time series to calculate the feature of
@@ -163,7 +175,7 @@ def time_series_abs_energy(x):
     """
     return ts_feature_calculators.abs_energy(x)
 
-
+@set_property("fctype", "simple")
 def time_series_absolute_sum_of_changes(x):
     """
     :param x: the time series to calculate the feature of
@@ -173,7 +185,7 @@ def time_series_absolute_sum_of_changes(x):
     """
     return ts_feature_calculators.absolute_sum_of_changes(x)
 
-
+@set_property("fctype", "simple")
 def time_series_variance_larger_than_std(x):
     """
     :param x: the time series to calculate the feature of
@@ -183,7 +195,7 @@ def time_series_variance_larger_than_std(x):
     """
     return int(ts_feature_calculators.variance_larger_than_standard_deviation(x))
 
-
+@set_property("fctype", "simple")
 def time_series_count_above_mean(x):
     """
     :param x: the time series to calculate the feature of
@@ -193,7 +205,7 @@ def time_series_count_above_mean(x):
     """
     return ts_feature_calculators.count_above_mean(x)
 
-
+@set_property("fctype", "simple")
 def time_series_count_below_mean(x):
     """
     :param x: the time series to calculate the feature of
@@ -203,7 +215,7 @@ def time_series_count_below_mean(x):
     """
     return ts_feature_calculators.count_below_mean(x)
 
-
+@set_property("fctype", "simple")
 def time_series_first_location_of_maximum(x):
     """
     :param x: the time series to calculate the feature of
@@ -213,7 +225,7 @@ def time_series_first_location_of_maximum(x):
     """
     return ts_feature_calculators.first_location_of_maximum(x)
 
-
+@set_property("fctype", "simple")
 def time_series_first_location_of_minimum(x):
     """
     :param x: the time series to calculate the feature of
@@ -223,7 +235,7 @@ def time_series_first_location_of_minimum(x):
     """
     return ts_feature_calculators.first_location_of_minimum(x)
 
-
+@set_property("fctype", "simple")
 def time_series_last_location_of_maximum(x):
     """
     :param x: the time series to calculate the feature of
@@ -233,7 +245,7 @@ def time_series_last_location_of_maximum(x):
     """
     return ts_feature_calculators.last_location_of_maximum(x)
 
-
+@set_property("fctype", "simple")
 def time_series_last_location_of_minimum(x):
     """
     :param x: the time series to calculate the feature of
@@ -243,7 +255,7 @@ def time_series_last_location_of_minimum(x):
     """
     return ts_feature_calculators.last_location_of_minimum(x)
 
-
+@set_property("fctype", "simple")
 def time_series_has_duplicate(x):
     """
     :param x: the time series to calculate the feature of
@@ -253,7 +265,7 @@ def time_series_has_duplicate(x):
     """
     return ts_feature_calculators.has_duplicate(x)
 
-
+@set_property("fctype", "simple")
 def time_series_has_duplicate_max(x):
     """
     :param x: the time series to calculate the feature of
@@ -263,7 +275,7 @@ def time_series_has_duplicate_max(x):
     """
     return ts_feature_calculators.has_duplicate_max(x)
 
-
+@set_property("fctype", "simple")
 def time_series_has_duplicate_min(x):
     """
     :param x: the time series to calculate the feature of
@@ -273,7 +285,7 @@ def time_series_has_duplicate_min(x):
     """
     return ts_feature_calculators.has_duplicate_min(x)
 
-
+@set_property("fctype", "simple")
 def time_series_longest_strike_above_mean(x):
     """
     :param x: the time series to calculate the feature of
@@ -283,7 +295,7 @@ def time_series_longest_strike_above_mean(x):
     """
     return ts_feature_calculators.longest_strike_above_mean(x)
 
-
+@set_property("fctype", "simple")
 def time_series_longest_strike_below_mean(x):
     """
     :param x: the time series to calculate the feature of
@@ -293,7 +305,7 @@ def time_series_longest_strike_below_mean(x):
     """
     return ts_feature_calculators.longest_strike_below_mean(x)
 
-
+@set_property("fctype", "simple")
 def time_series_mean_abs_change(x):
     """
     :param x: the time series to calculate the feature of
@@ -303,7 +315,7 @@ def time_series_mean_abs_change(x):
     """
     return ts_feature_calculators.mean_abs_change(x)
 
-
+@set_property("fctype", "simple")
 def time_series_mean_change(x):
     """
     :param x: the time series to calculate the feature of
@@ -313,7 +325,7 @@ def time_series_mean_change(x):
     """
     return ts_feature_calculators.mean_change(x)
 
-
+@set_property("fctype", "simple")
 def time_series_percentage_of_reoccurring_datapoints_to_all_datapoints(x):
     """
     :param x: the time series to calculate the feature of
@@ -323,7 +335,7 @@ def time_series_percentage_of_reoccurring_datapoints_to_all_datapoints(x):
     """
     return ts_feature_calculators.percentage_of_reoccurring_datapoints_to_all_datapoints(x)
 
-
+@set_property("fctype", "simple")
 def time_series_ratio_value_number_to_time_series_length(x):
     """
     :param x: the time series to calculate the feature of
@@ -333,7 +345,7 @@ def time_series_ratio_value_number_to_time_series_length(x):
     """
     return ts_feature_calculators.ratio_value_number_to_time_series_length(x)
 
-
+@set_property("fctype", "simple")
 def time_series_sum_of_reoccurring_data_points(x):
     """
     :param x: the time series to calculate the feature of
@@ -343,7 +355,7 @@ def time_series_sum_of_reoccurring_data_points(x):
     """
     return ts_feature_calculators.sum_of_reoccurring_data_points(x)
 
-
+@set_property("fctype", "simple")
 def time_series_sum_of_reoccurring_values(x):
     """
     :param x: the time series to calculate the feature of
@@ -353,7 +365,7 @@ def time_series_sum_of_reoccurring_values(x):
     """
     return ts_feature_calculators.sum_of_reoccurring_values(x)
 
-
+@set_property("fctype", "simple")
 def time_series_sum_values(x):
     """
     :param x: the time series to calculate the feature of
@@ -363,7 +375,7 @@ def time_series_sum_values(x):
     """
     return ts_feature_calculators.sum_values(x)
 
-
+@set_property("fctype", "simple")
 def time_series_range(x):
     """
     :param x: the time series to calculate the feature of
@@ -374,7 +386,7 @@ def time_series_range(x):
     return time_series_maximum(x) - time_series_minimum(x)
 
 
-
+@set_property("fctype", "simple")
 def abs_energy(x):
     """
     :param x: the time series to calculate the feature of
@@ -417,7 +429,7 @@ def _estimate_friedrich_coefficients(x, m, r):
     except (np.linalg.LinAlgError, ValueError):
         return [np.NaN] * (m + 1)
 
-
+@set_property("fctype", "combiner")
 def friedrich_coefficients(x, param):
     """
     :param x: the time series to calculate the feature of
@@ -452,7 +464,7 @@ def friedrich_coefficients(x, param):
             res["m_{}__r_{}__coeff_{}".format(m, r, coeff)] = np.NaN
         return [value for key, value in res.items()]
 
-
+@set_property("fctype", "simple")
 def ratio_beyond_r_sigma(x, r):
     """
     :param x: the time series to calculate the feature of
@@ -464,7 +476,7 @@ def ratio_beyond_r_sigma(x, r):
         x = np.asarray(x)
     return np.sum(np.abs(x - np.mean(x)) > r * np.std(x))/x.size
 
-
+@set_property("fctype", "simple")
 def large_standard_deviation(x, r):
     """
     :param x: the time series to calculate the feature of
@@ -478,6 +490,9 @@ def large_standard_deviation(x, r):
         x = np.asarray(x)
     return np.std(x) > (r * (np.max(x) - np.min(x)))
 
+
+
+@set_property("fctype", "simple")
 def number_peaks(x, n):
     """
     :param x: the time series to calculate the feature of
@@ -502,6 +517,7 @@ def number_peaks(x, n):
     return np.sum(res)
 
 
+@set_property("fctype", "combiner")
 def fft_aggregated(x, param):
     """
     Returns the spectral centroid (mean), variance, skew, and kurtosis of the absolute fourier transform spectrum.

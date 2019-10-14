@@ -25,7 +25,6 @@ __all__ = [	"time_series_autocorrelation",
                "time_series_value_distribution",
                "time_series_daily_parts_value_distribution",
                "time_series_daily_parts_value_distribution_with_threshold",
-               "time_series_binned_entropy",
                "approximate_entropy",
                "sample_entropy",
                "cwt_coefficients",
@@ -44,6 +43,16 @@ __all__ = [	"time_series_autocorrelation",
 ]
 
 
+def set_property(key, value):
+    """
+    This method returns a decorator that sets the property key of the function to value
+    """
+    def decorate_func(func):
+        setattr(func, key, value)
+        if func.__doc__ and key == "fctype":
+            func.__doc__ = func.__doc__ + "\n\n    *This function is of type: " + value + "*\n"
+        return func
+    return decorate_func
 
 def _roll(a, shift):
     """
@@ -60,7 +69,7 @@ def _roll(a, shift):
     idx = shift % len(a)
     return np.concatenate([a[-idx:], a[:-idx]])
 
-
+@set_property("fctype", "simple")
 def time_series_autocorrelation(x):
     """
     :param x: the time series to calculate the feature of
@@ -76,6 +85,7 @@ def time_series_autocorrelation(x):
     return ts_feature_calculators.autocorrelation(x, lag)
 
 
+@set_property("fctype", "simple")
 def time_series_coefficient_of_variation(x):
     """
     :param x: the time series to calculate the feature of
@@ -89,26 +99,10 @@ def time_series_coefficient_of_variation(x):
 
 
 
-def time_series_binned_entropy(x):
-    """
-    :param x: the time series to calculate the feature of
-    :type x: pandas.Series
-    :param max_bins: the maximal number of bins
-    :type max_bins: int
-    :return: the value of this feature
-    :return type: float
-    """
-    list = []
-    max_bins = [2, 4, 6, 8, 10, 20]
-    for value in max_bins:
-        temp__ = ts_feature_calculators.binned_entropy(x, value)
-        name = ("time_series_binned_entropy_max_bins_{}".format(value))
-        list.append({'{}'.format(name): temp__})
-    return list
 
 
 
-
+@set_property("fctype", "binned")
 def time_series_value_distribution(x):
     """
     :param x: normalized time series
@@ -123,6 +117,7 @@ def time_series_value_distribution(x):
 
 
 
+@set_property("fctype", "binned")
 def time_series_daily_parts_value_distribution(x):
     """
     :param x: normalized time series
@@ -141,8 +136,12 @@ def time_series_daily_parts_value_distribution(x):
     return list(np.array(count_c) / float(len(data_c))) + list(np.array(count_b) / float(len(data_b))) + list(np.array(count_a) / float(len(data_a)))
 
 
+@set_property("fctype", "binned")
 def time_series_daily_parts_value_distribution_with_threshold(x):
     """
+    Split the whole time series into three parts: c, b, a.
+    Given a threshold = 0.01, return the percentage of elements of time series
+    which are less than threshold
     :param x: normalized time series
     :type x: pandas.Series
     :return: 6 values of this feature
@@ -166,56 +165,53 @@ def time_series_daily_parts_value_distribution_with_threshold(x):
     nparray_threshold_count = (nparray_data_c_threshold == -1).sum() + (nparray_data_b_threshold == -1).sum() + (nparray_data_a_threshold == -1).sum()
 
     if nparray_threshold_count == 0:
-        features = [{"number_of_elements_less_than_threshould_lastweek":0}, {"number_of_elements_less_than_threshould_yesterday":0}, {"number_of_elements_less_than_threshould_today",0}]
+        features = [0, 0, 0]
     else:
         features = [
-            {"number_of_elements_less_than_threshould_lastweek_take_up_total_threshould_number":(nparray_data_c_threshold == -1).sum() / float(nparray_threshold_count)},
-            {"number_of_elements_less_than_threshould_yesterday_take_up_total_threshould_number":(nparray_data_b_threshold == -1).sum() / float(nparray_threshold_count)},
-            {"number_of_elements_less_than_threshould_today_take_up_total_threshould_number":(nparray_data_a_threshold == -1).sum() / float(nparray_threshold_count)}
+            (nparray_data_c_threshold == -1).sum() / float(nparray_threshold_count),
+            (nparray_data_b_threshold == -1).sum() / float(nparray_threshold_count),
+            (nparray_data_a_threshold == -1).sum() / float(nparray_threshold_count)
         ]
 
     features.extend([
-        {"number_of_elements_less_than_threshould_lastweek_take_up_total_lastweek_number":(nparray_data_c_threshold == -1).sum() / float(len(data_c))},
-        {"number_of_elements_less_than_threshould_lastweek_take_up_total_yesterday_number":(nparray_data_b_threshold == -1).sum() / float(len(data_b))},
-        {"number_of_elements_less_than_threshould_lastweek_take_up_total_today_number":(nparray_data_a_threshold == -1).sum() / float(len(data_a))}
-    ])
+                    (nparray_data_c_threshold == -1).sum() / float(len(data_c)),
+                    (nparray_data_b_threshold == -1).sum() / float(len(data_b)),
+                    (nparray_data_a_threshold == -1).sum() / float(len(data_a))
+                    ])
     return features
 
 
+@set_property("fctype", "binned")
 def time_series_window_parts_value_distribution_with_threshold(x):
     """
+    Split the whole time series into five parts.
+    Given a threshold = 0.01, return the percentage of elements of time series
+    which are less than threshold
     :param x: normalized time series
     :type x: pandas.Series
     :return: 5 values of this feature
     :return type: list
     """
-    list = []
     threshold = 0.01
     split_value_list = split_time_series(x, DEFAULT_WINDOW)
 
     count_list = []
-    a = 0
     for value_list in split_value_list:
         nparray_threshold = np.array(value_list)
         nparray_threshold[nparray_threshold < threshold] = -1
-        temp = (nparray_threshold == -1).sum()
         count_list.append((nparray_threshold == -1).sum())
-        name = ("time_series_window_parts_value_distribution_with_threshold_{}".format(a))
-        a = a + 1
-        if sum(count_list) == 0:
-            features = [{'time_series_window_parts_value_distribution_with_threshold_Ais0': 0},
-                        {'time_series_window_parts_value_distribution_with_threshold_bis0': 0},
-                        {'time_series_window_parts_value_distribution_with_threshold_cis0': 0},
-                        {'time_series_window_parts_value_distribution_with_threshold_Dis0': 0},
-                        {'time_series_window_parts_value_distribution_with_threshold_Eis0': 0}]
 
-        else:
-            features = temp / float((DEFAULT_WINDOW + 1))
-        list.append({'{}'.format(name): features})
+    if sum(count_list) == 0:
+        features = [0, 0, 0, 0, 0]
+    else:
+        features = list(np.array(count_list) / float((DEFAULT_WINDOW + 1)))
 
-    return list
+    return features
 
 
+@set_property("fctype", "simple")
+@set_property("high_comp_cost", True)
+@set_property("fctype", "simple")
 def approximate_entropy(x, m, r):
     """
     :param x: the time series to calculate the feature of
@@ -247,6 +243,8 @@ def approximate_entropy(x, m, r):
     return np.abs(_phi(m) - _phi(m + 1))
 
 
+@set_property("high_comp_cost", True)
+@set_property("fctype", "simple")
 def sample_entropy(x):
     """
     :param x: the time series to calculate the feature of
@@ -292,6 +290,7 @@ def sample_entropy(x):
     return se[0]
 
 
+@set_property("fctype", "combiner")
 def cwt_coefficients(x, param):
     """
     :param x: the time series to calculate the feature of
@@ -326,6 +325,7 @@ def cwt_coefficients(x, param):
 
     return res
 
+@set_property("fctype", "combiner")
 def fft_coefficient(x, param):
     """
     :param x: the time series to calculate the feature of
@@ -356,6 +356,7 @@ def fft_coefficient(x, param):
     return (complex_agg(fft[config["coeff"]], config["attr"]) if config["coeff"] < len(fft)
             else np.NaN for config in param)
 
+@set_property("fctype", "combiner")
 def ar_coefficient(x, param):
     """
     :param x: the time series to calculate the feature of
@@ -397,6 +398,7 @@ def ar_coefficient(x, param):
     return [(value) for key, value in res.items()]
 
 
+@set_property("fctype", "simple")
 def cid_ce(x, normalize):
     """
     :param x: the time series to calculate the feature of
@@ -419,6 +421,7 @@ def cid_ce(x, normalize):
     x = np.diff(x)
     return np.sqrt(np.dot(x, x))
 
+@set_property("fctype", "combiner")
 def partial_autocorrelation(x, param):
     """
     :param x: the time series to calculate the feature of
@@ -443,9 +446,9 @@ def partial_autocorrelation(x, param):
         pacf_coeffs = list(pacf(x, method="ld", nlags=max_lag))
         pacf_coeffs = pacf_coeffs + [np.nan] * max(0, (max_demanded_lag - max_lag))
 
-    # return [("lag_{}".format(lag["lag"]), pacf_coeffs[lag["lag"]]) for lag in param]
     return [(pacf_coeffs[lag["lag"]]) for lag in param]
 
+@set_property("fctype", "combiner")
 def agg_autocorrelation(x, param):
     """
     :param x: the time series to calculate the feature of
@@ -469,6 +472,7 @@ def agg_autocorrelation(x, param):
         a = acf(x, unbiased=True, fft=n > THRESHOLD_TO_USE_FFT, nlags=max_maxlag)[1:]
     return [(getattr(np, config["f_agg"])(a[:int(config["maxlag"])])) for config in param]
 
+@set_property("fctype", "combiner")
 def symmetry_looking(x, param):
     """
     :param x: the time series to calculate the feature of
@@ -485,7 +489,7 @@ def symmetry_looking(x, param):
     return [(mean_median_difference < (r["r"] * max_min_difference))
             for r in param]
 
-
+@set_property("fctype", "simple")
 def time_reversal_asymmetry_statistic(x, lag):
     """
     :param x: the time series to calculate the feature of
@@ -505,6 +509,7 @@ def time_reversal_asymmetry_statistic(x, lag):
         return np.mean((two_lag * two_lag * one_lag - one_lag * x * x)[0:(n - 2 * lag)])
 
 
+@set_property("fctype", "simple")
 def c3(x, lag):
     """
     :param x: the time series to calculate the feature of
@@ -522,6 +527,7 @@ def c3(x, lag):
     else:
         return np.mean((_roll(x, 2 * -lag) * _roll(x, -lag) * x)[0:(n - 2 * lag)])
 
+@set_property("fctype", "combiner")
 def spkt_welch_density(x, param):
     """
     :param x: the time series to calculate the feature of
@@ -548,6 +554,7 @@ def spkt_welch_density(x, param):
         return list(pxx[coeff])
 
 
+@set_property("fctype", "combiner")
 def linear_trend(x, param):
     """
     :param x: the time series to calculate the feature of
@@ -564,7 +571,10 @@ def linear_trend(x, param):
             for config in param]
 
 
-
+@set_property("fctype", "combiner")
+@set_property("input", "pd.Series")
+@set_property("index_type", pd.DatetimeIndex)
+@set_property("high_comp_cost", True)
 def linear_trend_timewise(x, param):
     """
     :param x: the time series to calculate the feature of. The index must be datetime.

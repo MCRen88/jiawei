@@ -8,14 +8,35 @@ For the naming of the features, see :ref:`feature-naming-label`.
 
 
 from __future__ import absolute_import, division
+
+from inspect import getargspec
+
+import pandas as pd
+import numpy as np
+from builtins import range
 from past.builtins import basestring
+
+from itertools import product
+
 from tsfresh.feature_extraction import feature_calculators
 from tsfresh.utilities.string_manipulation import get_config_from_string
+from itertools import product
 
-
+# from time_series_detector.feature import feature_calculators
+import feature.feature_anom as feature_anom
 
 def from_columns(columns, columns_to_ignore=None):
     """
+    Creates a mapping from kind names to fc_parameters objects
+    (which are itself mappings from feature calculators to settings)
+    to extract only the features contained in the columns.
+    To do so, for every feature name in columns this method
+
+    1. split the column name into col, feature, params part
+    2. decide which feature we are dealing with (aggregate with/without params or apply)
+    3. add it to the new name_to_function dict
+    4. set up the params
+
     :param columns: containing the feature names
     :type columns: list of str
     :param columns_to_ignore: columns which do not contain tsfresh feature names
@@ -69,16 +90,31 @@ def from_columns(columns, columns_to_ignore=None):
 
 class ComprehensiveFCParameters(dict):
     """
-    a dictionary  map from string (the same names that are in the feature_calculators.py file)
-    to a list of dictionary of parameters,which should be used when the function with this name is called.
+    Create a new ComprehensiveFCParameters instance. You have to pass this instance to the
+    extract_feature instance.
+
+    It is basically a dictionary (and also based on one), which is a mapping from
+    string (the same names that are in the feature_calculators.py file) to a list of dictionary of parameters,
+    which should be used when the function with this name is called.
 
     Only those strings (function names), that are keys in this dictionary, will be later used to extract
     features - so whenever you delete a key from this dict, you disable the calculation of this feature.
+
+    You can use the settings object with
+
+    # >>> from tsfresh.feature_extraction import extract_features, ComprehensiveFCParameters
+    # >>> extract_features(df, default_fc_parameters=ComprehensiveFCParameters())
+
+    to extract all features (which is the default nevertheless) or you change the ComprehensiveFCParameters
+    object to other types (see below).
     """
 
     def __init__(self):
-
         name_to_param = {}
+    #
+        for name, func in feature_calculators.__dict__.items():
+            if callable(func) and hasattr(func, "fctype") and len(getargspec(func).args) == 1:
+                name_to_param[name] = None
 
         name_to_param.update({
             # "time_reversal_asymmetry_statistic": [{"lag": lag} for lag in range(1, 4)],
@@ -96,7 +132,7 @@ class ComprehensiveFCParameters(dict):
             # "index_mass_quantile": [{"q": q} for q in [.1, .2, .3, .4, .6, .7, .8, .9]],
             # "cwt_coefficients": [{"widths": width, "coeff": coeff, "w": w} for
             #                      width in [(2, 5, 10, 20)] for coeff in range(15) for w in (2, 5, 10, 20)],
-            "spkt_welch_density": [{"coeff": coeff} for coeff in [2, 5, 8]],
+            # "spkt_welch_density": [{"coeff": coeff} for coeff in [2, 5, 8]],
             # "ar_coefficient": [{"coeff": coeff, "k": k} for coeff in range(5) for k in [10]],
             # "change_quantiles": [{"ql": ql, "qh": qh, "isabs": b, "f_agg": f}
             #                      for ql in [0., .2, .4, .6, .8] for qh in [.2, .4, .6, .8, 1.]
@@ -123,3 +159,140 @@ class ComprehensiveFCParameters(dict):
         })
 
         super(ComprehensiveFCParameters, self).__init__(name_to_param)
+
+
+class ComprehensiveFCParameters_feature_anom(dict):
+    """
+    Create a new ComprehensiveFCParameters instance. You have to pass this instance to the
+    extract_feature instance.
+
+    It is basically a dictionary (and also based on one), which is a mapping from
+    string (the same names that are in the feature_calculators.py file) to a list of dictionary of parameters,
+    which should be used when the function with this name is called.
+
+    Only those strings (function names), that are keys in this dictionary, will be later used to extract
+    features - so whenever you delete a key from this dict, you disable the calculation of this feature.
+
+    You can use the settings object with
+
+    # >>> from tsfresh.feature_extraction import extract_features, ComprehensiveFCParameters
+    # >>> extract_features(df, default_fc_parameters=ComprehensiveFCParameters())
+
+    to extract all features (which is the default nevertheless) or you change the ComprehensiveFCParameters
+    object to other types (see below).
+    """
+
+    def __init__(self):
+        name_to_param = {}
+    #
+        for name, func in feature_anom.__dict__.items():
+            if callable(func) and hasattr(func, "fctype") and len(getargspec(func).args) == 1:
+                name_to_param[name] = None
+
+        # name_to_param.update({
+        #
+        #     "quantile": [{"q": q} for q in [.1, .2, .3, .4, .6, .7, .8, .9]],
+        #     "number_cwt_peaks": [{"n": n} for n in [1, 5]],
+        #     "binned_entropy": [{"max_bins": max_bins} for max_bins in [10]],
+        #     "change_quantiles": [{"ql": ql, "qh": qh, "isabs": b, "f_agg": f}
+        #                          for ql in [0., .2, .4, .6, .8] for qh in [.2, .4, .6, .8, 1.]
+        #                          for b in [False, True] for f in ["mean", "var"]],
+        #     "number_crossing_m": [{"m": 0}, {"m": -1}, {"m": 1}],
+        #     "energy_ratio_by_chunks": [{"num_segments" : 10, "segment_focus": i} for i in range(10)],
+        #
+        # })
+
+        super(ComprehensiveFCParameters_feature_anom, self).__init__(name_to_param)
+
+class ComprehensiveFCParameters_feature_pattern(dict):
+    """
+    Create a new ComprehensiveFCParameters instance. You have to pass this instance to the
+    extract_feature instance.
+
+    It is basically a dictionary (and also based on one), which is a mapping from
+    string (the same names that are in the feature_calculators.py file) to a list of dictionary of parameters,
+    which should be used when the function with this name is called.
+
+    Only those strings (function names), that are keys in this dictionary, will be later used to extract
+    features - so whenever you delete a key from this dict, you disable the calculation of this feature.
+
+    You can use the settings object with
+
+    # >>> from tsfresh.feature_extraction import extract_features, ComprehensiveFCParameters
+    # >>> extract_features(df, default_fc_parameters=ComprehensiveFCParameters())
+
+    to extract all features (which is the default nevertheless) or you change the ComprehensiveFCParameters
+    object to other types (see below).
+    """
+
+    def __init__(self):
+        name_to_param = {}
+    #
+        for name, func in feature_anom.__dict__.items():
+            if callable(func) and hasattr(func, "fctype") and len(getargspec(func).args) == 1:
+                name_to_param[name] = None
+
+
+        name_to_param.update({
+
+        "time_reversal_asymmetry_statistic": [{"lag": lag} for lag in range(1, 4)],
+        "c3": [{"lag": lag} for lag in range(1, 4)],
+        "cid_ce": [{"normalize": True}, {"normalize": False}],
+        "symmetry_looking": [{"r": r * 0.05} for r in range(20)],
+        "autocorrelation": [{"lag": lag} for lag in range(10)],
+        "agg_autocorrelation": [{"f_agg": s, "maxlag": 40} for s in ["mean", "median", "var"]],
+        "partial_autocorrelation": [{"lag": lag} for lag in range(10)],
+        "cwt_coefficients": [{"widths": width, "coeff": coeff, "w": w} for
+                             width in [(2, 5, 10, 20)] for coeff in range(15) for w in (2, 5, 10, 20)],
+        "spkt_welch_density": [{"coeff": coeff} for coeff in [2, 5, 8]],
+        "ar_coefficient": [{"coeff": coeff, "k": k} for coeff in range(5) for k in [10]],
+
+        "fft_coefficient": [{"coeff": k, "attr": a} for a, k in product(["real", "imag", "abs", "angle"], range(100))],
+        "approximate_entropy": [{"m": 2, "r": r} for r in [.1, .3, .5, .7, .9]],
+        "linear_trend": [{"attr": "pvalue"}, {"attr": "rvalue"}, {"attr": "intercept"},
+                         {"attr": "slope"}, {"attr": "stderr"}],
+
+        "linear_trend_timewise": [{"attr": "pvalue"}, {"attr": "rvalue"}, {"attr": "intercept"},
+                                  {"attr": "slope"}, {"attr": "stderr"}]
+        })
+
+        super(ComprehensiveFCParameters_feature_pattern, self).__init__(name_to_param)
+
+class ComprehensiveFCParameters_feature_stat(dict):
+    """
+    Create a new ComprehensiveFCParameters instance. You have to pass this instance to the
+    extract_feature instance.
+
+    It is basically a dictionary (and also based on one), which is a mapping from
+    string (the same names that are in the feature_calculators.py file) to a list of dictionary of parameters,
+    which should be used when the function with this name is called.
+
+    Only those strings (function names), that are keys in this dictionary, will be later used to extract
+    features - so whenever you delete a key from this dict, you disable the calculation of this feature.
+
+    You can use the settings object with
+
+    # >>> from tsfresh.feature_extraction import extract_features, ComprehensiveFCParameters
+    # >>> extract_features(df, default_fc_parameters=ComprehensiveFCParameters())
+
+    to extract all features (which is the default nevertheless) or you change the ComprehensiveFCParameters
+    object to other types (see below).
+    """
+
+    def __init__(self):
+        name_to_param = {}
+    #
+        for name, func in feature_anom.__dict__.items():
+            if callable(func) and hasattr(func, "fctype") and len(getargspec(func).args) == 1:
+                name_to_param[name] = None
+
+
+        name_to_param.update({
+        "friedrich_coefficients": (lambda m: [{"coeff": coeff, "m": m, "r": 30} for coeff in range(m + 1)])(3),
+        "ratio_beyond_r_sigma": [{"r": x} for x in [0.5, 1, 1.5, 2, 2.5, 3, 5, 6, 7, 10]],
+        "large_standard_deviation": [{"r": r * 0.05} for r in range(1, 20)],
+        "number_peaks": [{"n": n} for n in [1, 3, 5, 10, 50]],
+        "fft_aggregated": [{"aggtype": s} for s in ["centroid", "variance", "skew", "kurtosis"]],
+        })
+
+        super(ComprehensiveFCParameters_feature_stat, self).__init__(name_to_param)

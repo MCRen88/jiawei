@@ -66,7 +66,7 @@ feature: 存放时间序列特征相关的计算逻辑
 	time_series_value_distribution
 	time_series_daily_parts_value_distribution
 	time_series_daily_parts_value_distribution_with_threshold
-	time_series_binned_entropy
+	time_series_binned_entropy   ##
 	
 	approximate_entropy
 	sample_entropy
