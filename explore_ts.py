@@ -53,6 +53,7 @@ def gen_pic():
         plt = plot_hist(df_slice, detect_days = 2, plot_day_index=[1,7], anom_col = "label" , value_col = "point", freq = 300)
         savePNG(plt, targetDir=join(pic_path, "%s.png" % l_id))
 
+
 def extract_selected_id_name():
     """
 
