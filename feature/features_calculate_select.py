@@ -144,7 +144,7 @@ def cal_features_based_on_id(id_dataset,window,id_name):
     DAY_PNT = len(id_dataset.loc[id_dataset['Date'] == id_dataset['Date'].ix[len(id_dataset)/2]])
     win_sli = window + 7 * DAY_PNT
     x_features_calculate,y_calculate = combine_features_calculate (id_dataset, window,DAY_PNT)
-    y_calculate["id"] = id_name
+    y_calculate["line_id"] = id_name
     calculate_features.append([x_features_calculate])
     label.append([y_calculate])
 

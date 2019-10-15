@@ -40,9 +40,26 @@ from feature.features_calculate_select \
 from visualize.plot_forcast_result import Precision_Recall_Curve, plot_auc, anomaly_predict_view\
     , anomaly_score_view_predict, anomaly_score_view_date
 from visualize.plot_stable_view import value_stable_determinate_view
+from sklearn.metrics import confusion_matrix
+from utils import savePNG,millisec_to_str
 
+import warnings
+warnings.filterwarnings("ignore")
+import sys
+sys.setrecursionlimit(1000000)
+import os
+from os import listdir,makedirs
+from os.path import join,dirname
+import json
 
-
+import pandas as pd
+import numpy as np
+from matplotlib.pyplot import cm
+import matplotlib.pyplot as plt
+from visualize.plot_ts import plot_hist
+from settings import Config_json,get_user_data_dir
+from utils import savePNG,millisec_to_str
+import os
 
 
 
@@ -144,8 +161,33 @@ def plot_tree(clf, title="example"):
     graph.render(title)
     pass
 
-
-
+#
+# def run():
+#     """
+#
+#     :return: the plots of the multiple id dataset  based on the final date
+#     """
+#     root_dir = get_user_data_dir()
+#
+#     original_path = join(root_dir, "706_dnm_tmp_3ZFwT#sum_iUserNum_300#20190620_16Days_valid6D_pipeline_test_input_node_train_data.csv")
+#     df = pd.read_csv(original_path)
+#     # print(df.head())
+#     df["timestamp"] = df["timestamp"].map(millisec_to_str)
+#     #
+#     pic_path = join("/Users/xumiaochun/jiawei", "tmp/pic_valid/")
+#
+#     line_id_list = np.unique(df.line_id)
+#
+#     for l_id in line_id_list:
+#         l_id_list = l_id.split("valid")
+#         VALID_DAY = l_id_list[-1].replace("D", "")
+#         print VALID_DAY
+#         if int(VALID_DAY) <10:
+#             continue
+#         df_slice = df[df.line_id == l_id].copy()
+#         print(df_slice.shape)
+#         plt = plot_hist(df_slice, detect_days = 2, plot_day_index=[1,7], anom_col = "label" , value_col = "point", freq = 300)
+#         savePNG(plt, targetDir=join(pic_path, "%s.png" % l_id))
 
 
 
@@ -157,7 +199,6 @@ if __name__ == "__main__":
 #
 #
 #     #
-#     # global x_features_selected
     warnings.filterwarnings("ignore")
     window = 14
     # DEFAULT_WINDOW = 2
@@ -170,8 +211,8 @@ if __name__ == "__main__":
     new_dataset = []
     calculate_features = []
     labels = []
-    # for j in range(0,len(selected_id)):
-    for j in range(0, 5):
+    for j in range(0,len(selected_id)):
+    # for j in range(0, 1):
         id_name = selected_id[j]
         id_dataset = total_dataset[total_dataset['line_id'] == id_name]
         cal_features,y_calculate = cal_features_based_on_id(id_dataset,window,id_name)
@@ -181,13 +222,55 @@ if __name__ == "__main__":
     calculate_features = pd.concat(calculate_features)
     labels = pd.concat(labels)
 
-    calculate_features = calculate_features.replace([np.inf, -np.inf], np.nan).dropna()
+    calculate_features = calculate_features.replace([np.inf, -np.inf], np.nan).dropna(axis=1)
+    calculate_features = calculate_features.ix[:, ~((calculate_features == 1).all() | (calculate_features == 0).all()) | (calculate_features == 'inf').all()]
     selected_features = features_selected_ExtraTreesClassifier(calculate_features,labels.anomaly)
     y_pred_train, anomaly_score_train = data_modeling_gbdt(selected_features, labels.anomaly)
-    predict_report_train = classification_report(labels.anomaly, y_pred_train, labels=[1, 2, 3])
-    print predict_report_train
+    predict_report_train = classification_report(labels.anomaly, y_pred_train, labels=[1,2])
+    print "\npredict_report_train\n",predict_report_train
+    print "\ny_pred_train\n",y_pred_train,"\nanomaly_score_train\n",anomaly_score_train
 
-##
+    y_pred_train =pd.DataFrame(y_pred_train, columns={'y_pred_train'})
+    anomaly_score_train = pd.DataFrame(anomaly_score_train, columns={'anomaly_score_train'})
+    print "\ny_pred_train\n", y_pred_train, "\nanomaly_score_train\n", anomaly_score_train,"\nlabels\n",labels
+    new_check_dataset = pd.concat([labels,y_pred_train],axis=1)
+    new_check_dataset = pd.concat([new_check_dataset,anomaly_score_train],axis=1)
+    new_check_dataset_wrongpre = new_check_dataset.loc[new_check_dataset.anomaly != new_check_dataset.y_pred_train]
+    new_check_dataset_wrongpre = new_check_dataset_wrongpre.reset_index(drop = True)
+    tn, fp, fn, tp = confusion_matrix(labels.anomaly, y_pred_train).ravel()
+    print new_check_dataset_wrongpre.head(2),new_check_dataset_wrongpre.columns.tolist()
+    print "\nconfusion value:\n",tn, fp, fn, tp
+    print '\ncontain wrong pred id include:\n',np.unique(new_check_dataset_wrongpre.line_id)
+    print '\nwrong_pred\n',new_check_dataset_wrongpre
+    new_check_dataset_wrongpre.to_csv("new_check_dataset_wrongpre.csv")
+    print "\n\nlabels.anomaly, y_pred_train\n",(classification_report(labels.anomaly, y_pred_train))
+
+
+
+
+    # df = new_check_dataset_wrongpre
+    # print(df.head())
+    # df["timestamp"] = df["timestamp"].map(millisec_to_str)
+    #
+    # pic_path = join("/Users/xumiaochun/jiawei", "tmp/pic_valid/")
+
+
+
+
+
+
+    #
+    # a = [[0,20,0],[0,3,3],[3,4,0],[0,3,0]]
+    # a  = pd.DataFrame(a,columns = {'a','b','c'})
+    # print a
+    #
+    # # p = a.ix[:,~((a==1).all()|(a==0).all())|(a=='inf').all()]
+    # # p = a.replace([np.inf, -np.inf], np.nan).dropna()
+    # # p = a.replace(0,np.nan).dropna(axis=1)
+    # p = a.loc[a.b != a.c]
+    # print p
+
+
 
 
 # #数据特征提取要based整个数据集combine_features_calculate（所有id）；；
