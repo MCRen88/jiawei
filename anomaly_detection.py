@@ -184,7 +184,7 @@ if __name__ == "__main__":
     calculate_features = calculate_features.replace([np.inf, -np.inf], np.nan).dropna()
     selected_features = features_selected_ExtraTreesClassifier(calculate_features,labels.anomaly)
     y_pred_train, anomaly_score_train = data_modeling_gbdt(selected_features, labels.anomaly)
-    predict_report_train = classification_report(labels.anomaly, y_pred_train, labels=[1, 2, 3])
+    predict_report_train = classification_report(labels.anomaly, y_pred_train, )
     print predict_report_train
 
 ##

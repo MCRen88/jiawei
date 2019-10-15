@@ -4,11 +4,37 @@ warnings.filterwarnings("ignore")
 import os
 
 from os import listdir
-from os.path import join
+from os.path import join, abspath,dirname
 import json
 
-default_config = {}
+env_config = {
+'LOCAL_UDF_DATA_DIR': {
+        'xumiaochun': '/Users/xumiaochun/python_workspace/southern_power_grid/data/multiple',
+        'shihuanzhao': '/Volumes/shihuan/tencent-data/modelflow-data-online-5min/',
+        'shuiliantan': '/Users/shuiliantan/tencent_work/2019aiopsdata/2019AIOps_data_test2'
+    },}
 
+def get_user_data_dir():
+    if os.getcwd().startswith('/Users/xumiaochun'):
+        LOCAL_UDF_DATA_DIR = env_config.get('LOCAL_UDF_DATA_DIR')['xumiaochun']
+    elif os.getcwd().startswith('/Users/stellazhao'):
+        LOCAL_UDF_DATA_DIR = env_config.get('LOCAL_UDF_DATA_DIR')['shihuanzhao']
+    elif os.getcwd().startswith('/Users/shuiliantan'):
+        LOCAL_UDF_DATA_DIR = env_config.get('LOCAL_UDF_DATA_DIR')['shuiliantan']
+
+    elif os.getcwd().startswith('/data/mapleleaf'):
+        LOCAL_UDF_DATA_DIR = env_config.get('REMOTE_DATA_DIR')
+    else:
+        print('get_user_data_dir error ')
+        LOCAL_UDF_DATA_DIR = ''
+    print('your local data dir prefix is: %s' % (LOCAL_UDF_DATA_DIR))
+    return LOCAL_UDF_DATA_DIR
+
+
+
+root_dir = get_user_data_dir()
+
+PROJECT_DIR = abspath(dirname(__file__))
 
 override_config = {
     'ENV_TYPE': 'TEST',
@@ -20,11 +46,13 @@ override_config = {
     'MATCH_SWITCH_SUBSTRING_NAME': True,
     'MATCH_SWITCH_COMMONSTRING': True,
     'WORK_MODE': 'NAMELIST',
-    'LOCAL_UDF_DATA_DIR': {
-        'xumiaochun': '/Users/xumiaochun/python_workspace/southern_power_grid/data/multiple',
-        'shihuanzhao': '/Volumes/shihuan/tencent-data/modelflow-data-online-5min/',
-        'shuiliantan': '/Users/shuiliantan/tencent_work/2019aiopsdata/2019AIOps_data_test2'
-    }}
+    "original_path": join(root_dir, "706_dnm_tmp_3ZFwT#sum_iUserNum_300#20190620_16Days_valid6D_pipeline_test_input_node_train_data.csv"),
+    'train_data':join(PROJECT_DIR,"tmp/train_data"),
+    'model_dir': join(PROJECT_DIR,"tmp/models")
+    }
+
+
+
 
 
 class Config_json():
@@ -45,21 +73,4 @@ class Config_json():
             res = None
         return res
 
-
-
-def get_user_data_dir():
-    config_json = Config_json()
-    if os.getcwd().startswith('/Users/xumiaochun'):
-        LOCAL_UDF_DATA_DIR = config_json.get_config('LOCAL_UDF_DATA_DIR')['xumiaochun']
-    elif os.getcwd().startswith('/Users/stellazhao'):
-        LOCAL_UDF_DATA_DIR = config_json.get_config('LOCAL_UDF_DATA_DIR')['shihuanzhao']
-    elif os.getcwd().startswith('/Users/shuiliantan'):
-        LOCAL_UDF_DATA_DIR = config_json.get_config('LOCAL_UDF_DATA_DIR')['shuiliantan']
-
-    elif os.getcwd().startswith('/data/mapleleaf'):
-        LOCAL_UDF_DATA_DIR = config_json.get_config('REMOTE_DATA_DIR')
-    else:
-        print('get_user_data_dir error ')
-        LOCAL_UDF_DATA_DIR = ''
-    print('your local data dir prefix is: %s' % (LOCAL_UDF_DATA_DIR))
-    return LOCAL_UDF_DATA_DIR
+default_config = {}
