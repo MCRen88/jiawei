@@ -148,7 +148,7 @@ def time_series_periodic_features(x_list):
     data_c_left, data_c_right, data_b_left, data_b_right, data_a = x_list[0], x_list[1], x_list[2], x_list[3], x_list[4]
 
     periodic_features = []
-    DEFAULT_WINDOW = 14
+    # DEFAULT_WINDOW = 14
     # '''
     # Add the absolute value of difference between today and a week ago and its sgn as two features
     # Add the absolute value of difference between today and yesterday and its sgn as two features
@@ -187,7 +187,7 @@ def time_series_periodic_features(x_list):
 
 # #
 @set_property("fctype", "simple")
-def binned_entropy(x, max_bins):
+def binned_entropy(x, max_bins=5):
     """
     :param x: the time series to calculate the feature of
     :type x: numpy.ndarray
