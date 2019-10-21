@@ -238,10 +238,12 @@ if __name__ == "__main__":
 
 
     y_pred_test =pd.DataFrame(y_pred_test, columns={'y_pred_test'})
-    anomaly_score_test = pd.DataFrame(anomaly_score_test, columns={'anomaly_score_test'})
-    labels_test = labels_test.reset_index(drop = True)
     y_pred_test = y_pred_test.reset_index(drop = True)
+
+    anomaly_score_test = pd.DataFrame(anomaly_score_test, columns={'anomaly_score_test'})
     anomaly_score_test = anomaly_score_test.reset_index(drop = True)
+
+    labels_test = labels_test.reset_index(drop = True)
     new_check_dataset_test = pd.concat([labels_test,y_pred_test],axis=1)
     new_check_dataset_test = pd.concat([new_check_dataset_test,anomaly_score_test],axis=1)
     new_check_dataset_wrongpre_test = new_check_dataset_test.loc[new_check_dataset_test.anomaly != new_check_dataset_test.y_pred_test]
