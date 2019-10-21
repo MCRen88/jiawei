@@ -10,12 +10,12 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 import pandas as pd
 from time_series_detector.common.tsd_common import *
-import feature_service
+import feature.feature_service as feature_service
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import SelectFromModel
 
 
-def sliding_window(value, window_len,DAY_PNT):
+def sliding_window(value, window_len, DAY_PNT):
     """
 
     :param value: the time series that need to calculate
@@ -26,7 +26,7 @@ def sliding_window(value, window_len,DAY_PNT):
     value_window = []
     value = np.array(value)
 
-    for i in range(window_len + 7 * DAY_PNT, len(value) + 1):
+    for i in range(len(value) -2 * DAY_PNT, len(value) + 1):
         xs_c = value[i - window_len - 7 * DAY_PNT: i + window_len - 7 * DAY_PNT]
         xs_b = value[i - window_len - 1 * DAY_PNT: i + window_len - 1 * DAY_PNT]
         xs_a = value[i - window_len:i]
@@ -35,7 +35,7 @@ def sliding_window(value, window_len,DAY_PNT):
 
     return value_window
     
-def combine_features_calculate (data, window,DAY_PNT):
+def combine_features_calculate (data,window,DAY_PNT, win_sli):
     """
 
     :param data: dataset that contains time series to be analysed
@@ -44,7 +44,9 @@ def combine_features_calculate (data, window,DAY_PNT):
     :return: list of calculated features and label of the dataset time series
     """
     features = []
-    sliding_arrays = sliding_window(data.value, window_len=window,DAY_PNT = DAY_PNT)
+
+
+    sliding_arrays = sliding_window(data.value,window, DAY_PNT)
 
     for ith, arr in enumerate(sliding_arrays):
         tmp = feature_service.calculate_all_features(arr, window)
@@ -62,7 +64,7 @@ def combine_features_calculate (data, window,DAY_PNT):
     k_format_changed = k_format_changed.ix[:, ~((k_format_changed==0).all())] ##delete the columns that is all 0 values
     k_format_changed = k_format_changed.ix[:, ~((k_format_changed==1).all())] ##delete the columns that is all 1 values
 
-    label = data.anomaly[window + 7 * DAY_PNT-1:]
+    label = data.anomaly[win_sli-1:]
     label = pd.DataFrame(label)
     return [k_format_changed, label]
 
@@ -75,10 +77,16 @@ def features_selected_ExtraTreesClassifier(x,y):
     '''
     clf = ExtraTreesClassifier()
     clf = clf.fit(x, y)
+    f_name = x.columns
     features_importance = clf.feature_importances_
+    features_id = np.argsort(-features_importance)
+    sorted_f_name = f_name[features_id]
+    sorted_f_values = features_importance[features_id]
+
+
     model = SelectFromModel(clf, prefit=True)
     selected_features = model.transform(x)
-    selected_features = pd.DataFrame(selected_features)
+    selected_features = pd.DataFrame(selected_features, columns=sorted_f_name[:selected_features.shape[1]])
     return selected_features
 
 
@@ -97,6 +105,7 @@ def selected_columns_names(origin_features_df, selected_features_df):
 
     ##by comparing the random value of two df to find out in which column in origin_features_df is selected and,
     #   therefore, is able to print the sekected features name
+
     for a in range(0, selected_features_df.shape[1]):
         for b in range(0, origin_features_df.shape[1]):
             if (selected_features_df.iloc[l1, a] == origin_features_df.iloc[l1, b] and selected_features_df.iloc[l2, a] == origin_features_df.iloc[l2, b]
@@ -106,12 +115,12 @@ def selected_columns_names(origin_features_df, selected_features_df):
                     and selected_features_df.iloc[l9, a] == origin_features_df.iloc[l9, b] and selected_features_df.iloc[l10, a] == origin_features_df.iloc[l10, b]
             ):
                 selected_features_name.append(k.ix[b])
+                selected_features_df = selected_features_df.rename(columns={'{}'.format(a): '{}'.format(k.ix[b])})
                 break
 
-    selected_features_df.columns = np.array(selected_features_name)
     selected_features_name = pd.DataFrame(selected_features_name)
     selected_features_name = selected_features_name.values.tolist() ####！！！！！！！
-
+    selected_features_name = np.array(selected_features_name)
     return selected_features_name,selected_features_df
     
 
@@ -141,9 +150,13 @@ def cal_features_based_on_id(id_dataset,window,id_name):
     calculate_features = []
     label = []
     id_dataset = id_dataset.reset_index(drop=True)
-    DAY_PNT = len(id_dataset.loc[id_dataset['Date'] == id_dataset['Date'].ix[len(id_dataset)/2]])
-    win_sli = window + 7 * DAY_PNT
-    x_features_calculate,y_calculate = combine_features_calculate (id_dataset, window,DAY_PNT)
+
+    DAY_PNT = len(id_dataset.loc[id_dataset['Date'] == id_dataset['Date'].ix[int(len(id_dataset)/2)]])
+    DAY_PNT_two_times = DAY_PNT * 2
+    win_sli = len(id_dataset) - DAY_PNT_two_times
+    x_features_calculate,y_calculate = combine_features_calculate (id_dataset,window,DAY_PNT, win_sli)
+
+    # x_features_calculate,y_calculate = combine_features_calculate (id_dataset, window,DAY_PNT)
     y_calculate["line_id"] = id_name
     calculate_features.append([x_features_calculate])
     label.append([y_calculate])
@@ -152,7 +165,6 @@ def cal_features_based_on_id(id_dataset,window,id_name):
     calculate_features = calculate_features.reset_index(drop=True)
     label = pd.concat([y_calculate])
     label= label.reset_index(drop = True)
-    # new_dataset1 = pd.concat([calculate_features,label],axis=1)
 
     return calculate_features,label
 

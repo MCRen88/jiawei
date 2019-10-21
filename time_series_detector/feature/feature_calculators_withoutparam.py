@@ -25,7 +25,7 @@ from time_series_detector.feature.setting import ComprehensiveFCParameters
 import numpy as np
 import tsfresh.feature_extraction.feature_calculators as ts_feature_calculators
 from time_series_detector.common.tsd_common import DEFAULT_WINDOW, split_time_series
-from statistical_features import time_series_mean, time_series_variance, time_series_standard_deviation, time_series_median
+from feature.statistical_features import time_series_mean, time_series_variance, time_series_standard_deviation, time_series_median
 
 
 def time_series_autocorrelation(x):

@@ -1,0 +1,5 @@
+anomaly,line_id,y_pred_train,anomaly_score_train
+1,105_dnm_tmp_NlZyB#sum_iUserNum_300#20190623_16Days_valid16D,0,0.4873882330802717
+0,706_cfm_online#set_id=5#sum_usernum_300#20190616_16Days_valid14D,1,0.5351164425645014
+0,706_dnm_tmp_d0Dp4#sum_iUserNum_300#20190616_16Days_valid14D,1,0.598533555673052
+1,706_dnm_tmp_fMjwu#sum_iUserNum_300#20190623_16Days_valid16D,0,0.35291967928769497

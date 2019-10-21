@@ -1,0 +1,12 @@
+anomaly,line_id,y_pred_test,anomaly_score_test
+1,105_dnm_tmp_NlZyB#sum_iUserNum_300#20190623_16Days_valid16D,0,0.4873882330802717
+0,105_dnm_tmp_NlZyB#sum_iUserNum_300#20190623_16Days_valid16D,1,0.9999999999986438
+0,105_dnm_tmp_NlZyB#sum_iUserNum_300#20190624_16Days_valid16D,1,0.9999999999986438
+0,706_cfm_online#set_id=4#sum_usernum_300#20190624_16Days_valid14D,1,0.9999999999986438
+0,706_cfm_online#set_id=5#sum_usernum_300#20190616_16Days_valid14D,1,0.5351164425645014
+1,706_dnm_tmp_3ZFwT#sum_iUserNum_300#20190620_16Days_valid16D,0,0.0016208325860692149
+0,706_dnm_tmp_d0Dp4#sum_iUserNum_300#20190616_16Days_valid14D,1,0.6456503022930716
+1,706_dnm_tmp_fMjwu#sum_iUserNum_300#20190620_16Days_valid12D,0,0.0025763159759655953
+1,706_dnm_tmp_fMjwu#sum_iUserNum_300#20190623_16Days_valid16D,0,0.35291967928769497
+0,706_dnm_tmp_nRw60#sum_iUserNum_300#20190623_16Days_valid14D,1,0.9999999999986438
+0,706_dnm_tmp_nRw60#sum_iUserNum_300#20190624_16Days_valid14D,1,0.9999999999986438

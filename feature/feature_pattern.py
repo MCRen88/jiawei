@@ -20,7 +20,7 @@ from statsmodels.tsa.ar_model import AR
 from statsmodels.tsa.stattools import acf, pacf
 
 
-__all__ = [	"time_series_autocorrelation",
+__all__ = [	"autocorrelation",
                "time_series_coefficient_of_variation",
                "time_series_value_distribution",
                "time_series_daily_parts_value_distribution",

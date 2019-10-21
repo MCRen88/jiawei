@@ -129,7 +129,7 @@ def time_series_double_exponential_weighted_moving_average(x):
 
     return s[-1] - x[-1]
 
-@set_property("fctype", "simple")
+@set_property("fctype", "binned")
 def time_series_periodic_features(x_list):
     """
     :param data_c_left: the time series of historical reference data

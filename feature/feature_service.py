@@ -8,13 +8,16 @@ https://opensource.org/licenses/BSD-3-Clause
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 """
 import warnings
-import statistical_features
-import feature_calculate
-import classification_features
-import fitting_features
+
+# import feature.statistical_features as statistical_features
+import feature.feature_calculate as feature_calculate
+# import classification_features
+# import fitting_features
 from time_series_detector.common import tsd_common
-import feature_calculate
-import feature_anom
+import feature.feature_calculate as feature_calculate
+import feature.feature_anom as feature_anom
+import feature.feature_stat as feature_stat
+
 
 
 def calculate_all_features(time_series, window):
@@ -41,9 +44,9 @@ def calculate_all_features(time_series, window):
 
 
 
-    # anom_feature = feature_calculate.get_classification_features_test(normalized_split_time_series)
-    # pattern_feature = feature_calculate.get_classification_feature_pattern(max_min_normalized_time_series)
+    anom_feature = feature_calculate.get_classification_features_test(normalized_split_time_series)
+    pattern_feature = feature_calculate.get_classification_feature_pattern(max_min_normalized_time_series)
     stat_feature = feature_calculate.get_classification_feature_stat(max_min_normalized_time_series)
-    features = stat_feature
+    features = stat_feature + anom_feature+ pattern_feature
     return features
 

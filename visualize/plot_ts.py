@@ -22,7 +22,7 @@ FIGURE_SIZE = (16, 7)
 
 
 
-def plot_hist(df, detect_days = 2, plot_day_index=[1,7], anom_col = None , value_col = "value", freq = 60):
+def plot_hist(df, detect_days = 2, plot_day_index=[1,7], anom_col = None ,pre_anom_col = None, value_col = "value", freq = 60):
     """
     detect_days: 检测时间长度，以天为单位
     freq: 时序间隔，以秒为单位
@@ -52,6 +52,12 @@ def plot_hist(df, detect_days = 2, plot_day_index=[1,7], anom_col = None , value
     info = "%s#%spts" % (anom_col, anom_df_slice.shape[0])
     if anom_df_slice.shape[0] >= 1:
         anom_df_slice.plot(c="g", linewidth=5, style='>', label=info)
+
+## --加入预测部分
+    pre_anom_df_slice = df[df[pre_anom_col] == 1][value_col]
+    info = "%s#%spts" % (pre_anom_col, pre_anom_df_slice.shape[0])
+    if pre_anom_df_slice.shape[0] >= 1:
+        pre_anom_df_slice.plot(c="red", linewidth=5, style='+', label=info)
     return plt
 
 
@@ -69,5 +75,5 @@ def anomaly_view(dataset):
     plt.scatter(pd.to_datetime(np.array(y_train_anomaly_dataset_selcted.timestamps)),y_train_anomaly_dataset_selcted.value, color='red',marker='+', label='Maxmin_value_anomaly')
     plt.legend(loc= 'best',fontsize= 5)
     plt.xticks(rotation=30)
-    plt.title('Value and Anomaly view')# give plot a title
-    plt.show()
+    plt.title('Value and Anomaly view of')# give plot a title
+    return plt
