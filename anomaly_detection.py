@@ -395,8 +395,12 @@ if __name__ == "__main__":
     print ("\n\nlabels_test.anomaly, y_pred_test\n", (classification_report(labels_test.anomaly, y_pred_test)))
 
 
+    tn, fp, fn, tp = confusion_matrix(labels_train.anomaly, y_pred_train).ravel()
     confusion_train = confusion_matrix(labels_train.anomaly, y_pred_train).ravel()
     print ("confusion_train2",confusion_train)
+    print ("\nconfusion value__train:\n", tn, fp, fn, tp)
+    tn_test, fp_test, fn_test, tp_test = confusion_matrix(labels_test.anomaly, y_pred_test).ravel()
+    print ("\nconfusion value__test:\n", tn_test, fp_test, fn_test, tp_test)
     confusion_test = confusion_matrix(labels_test.anomaly, y_pred_test).ravel()
     print  ("confusion_test2",confusion_test)
     Precision_Recall_Curve2(labels_train.anomaly, anomaly_score_train)
