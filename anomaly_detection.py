@@ -86,14 +86,6 @@ import os
 from sklearn.metrics import precision_recall_curve,classification_report, confusion_matrix
 
 
-N_color = 10
-
-DAY_SECONDS = 1440 * 60
-
-FIGURE_SIZE = (16, 7)
-
-
-
 
 def savePklto(py_obj, targetDir):
     print("[savePklto]%s" % targetDir)
@@ -222,34 +214,6 @@ def plot_tree(clf, title="example"):
     graph = graphviz.Source(dot_data)
     graph.render(title)
     pass
-
-#
-# def run():
-#     """
-#
-#     :return: the plots of the multiple id dataset  based on the final date
-#     """
-#     root_dir = get_user_data_dir()
-#
-#     original_path = join(root_dir, "706_dnm_tmp_3ZFwT#sum_iUserNum_300#20190620_16Days_valid6D_pipeline_test_input_node_train_data.csv")
-#     df = pd.read_csv(original_path)
-#     # print(df.head())
-#     df["timestamp"] = df["timestamp"].map(millisec_to_str)
-#     #
-#     pic_path = join("/Users/xumiaochun/jiawei", "tmp/pic_valid/")
-#
-#     line_id_list = np.unique(df.line_id)
-#
-#     for l_id in line_id_list:
-#         l_id_list = l_id.split("valid")
-#         VALID_DAY = l_id_list[-1].replace("D", "")
-#         print VALID_DAY
-#         if int(VALID_DAY) <10:
-#             continue
-#         df_slice = df[df.line_id == l_id].copy()
-#         print(df_slice.shape)
-#         plt = plot_hist(df_slice, detect_days = 2, plot_day_index=[1,7], anom_col = "label" , value_col = "point", freq = 300)
-#         savePNG(plt, targetDir=join(pic_path, "%s.png" % l_id))
 
 
 def selecte_festures(selected_id,dataset):
