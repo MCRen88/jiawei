@@ -398,18 +398,18 @@ if __name__ == "__main__":
     new_check_dataset_wrongpre_test = new_check_dataset_wrongpre_test.reset_index(drop = True)
 
     print (new_check_dataset_wrongpre_test.head(2),new_check_dataset_wrongpre_test.columns.tolist())
-    print ('\ncontain wrong pred id include__test:\n',np.unique(new_check_dataset_wrongpre_test.line_id))
+    # print ('\ncontain wrong pred id include__test:\n',np.unique(new_check_dataset_wrongpre_test.line_id))
     print ('\nwrong_pred__test\n',new_check_dataset_wrongpre_test)
-    new_check_dataset_wrongpre_test.to_csv("new_check/new_check_dataset_wrongpre2__test.csv",index=False)
+    # new_check_dataset_wrongpre_test.to_csv("new_check/new_check_dataset_wrongpre2__test.csv",index=False)
 
     ##对应时间戳
 
-    dataset_train.to_csv("new_check/dataset_train.csv",index=False)
-    y_pred_train.to_csv("new_check/y_pred_train.csv",index=False)
-    anomaly_score_train.to_csv("new_check/anomaly_score_train.csv",index=False)
-    dataset_test.to_csv("new_check/dataset_test.csv",index=False)
-    y_pred_test.to_csv("new_check/y_pred_test.csv",index=False)
-    anomaly_score_test.to_csv("new_check/anomaly_score_test.csv",index=False)
+    # dataset_train.to_csv("new_check/dataset_train.csv",index=False)
+    # y_pred_train.to_csv("new_check/y_pred_train.csv",index=False)
+    # anomaly_score_train.to_csv("new_check/anomaly_score_train.csv",index=False)
+    # dataset_test.to_csv("new_check/dataset_test.csv",index=False)
+    # y_pred_test.to_csv("new_check/y_pred_test.csv",index=False)
+    # anomaly_score_test.to_csv("new_check/anomaly_score_test.csv",index=False)
 
     # dataset_train_t = include_pre_dataset(dataset_train, labels_train,y_pred_train,anomaly_score_train)
     # dataset_test_t = include_pre_dataset(dataset_test, labels_train, y_pred_test,anomaly_score_test)

@@ -20,8 +20,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import label_binarize
 from sklearn.multiclass import OneVsRestClassifier
 from scipy import interp
-
-
+from sklearn.metrics import classification_report, confusion_matrix,f1_score
+from visualize.plot_ts import anomaly_view
 
 # def ffff(y, scores):
 #     n_classes = len(y)
@@ -359,3 +359,30 @@ def preci_rec(dataset):
     plt.title('2-class Precision-Recall curve: AP={0:0.2f}'.format(
               average_precision))
     plt.show()
+
+def poor_pred_id_dataset_view(labels_with_id,y_pred,y_pred_score):
+    '''
+
+    :param labels_with_id: the dataframe that contains labels and id information
+    :param y_pred: predict data
+    :param y_pred_score: predict score data
+    :return:
+    '''
+    y_pred_test =pd.DataFrame(y_pred, columns={'y_pred_test'})
+    anomaly_score_test = pd.DataFrame(y_pred_score, columns={'anomaly_score_test'})
+    labels_test = labels_with_id.reset_index(drop = True)
+    y_pred_test = y_pred_test.reset_index(drop = True)
+    anomaly_score_test = anomaly_score_test.reset_index(drop = True)
+    new_check_dataset_test = pd.concat([labels_test,y_pred_test],axis=1)
+    new_check_dataset_test = pd.concat([new_check_dataset_test,anomaly_score_test],axis=1)
+    new_check_dataset_wrongpre_test = new_check_dataset_test.loc[new_check_dataset_test.anomaly != new_check_dataset_test.y_pred_test]
+    new_check_dataset_wrongpre_test = new_check_dataset_wrongpre_test.reset_index(drop = True)
+    selected_id = np.unique(new_check_dataset_wrongpre_test.line_id)
+    for j in range(0, len(selected_id)):
+        id_name = selected_id[j]
+        id_dataset = new_check_dataset_wrongpre_test[new_check_dataset_wrongpre_test['line_id'] == id_name]
+        f1_score_value = f1_score(labels_test.anomaly, y_pred_test, average='binary')
+        if f1_score_value<0.7 and f1_score_value >0.5:
+            print ("0.5<f1_score<0.7__test","id_name:",id_name,anomaly_view(id_dataset,id_name))
+        if f1_score_value<0.5:
+            print ("f1_score<0.5__test","id_name:",id_name,anomaly_view(id_dataset,id_name))
