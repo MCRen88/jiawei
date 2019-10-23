@@ -239,7 +239,51 @@ def selecte_festures(selected_id,dataset):
     print ("selected_features of {}的大小".format(name),selected_features.shape)
     return calculate_features,labels
 
-def concat(ori_dataset,y_pred_df,y_pred_score_df):
+def concat_train(ori_dataset,y_pred_df,y_pred_score_df):
+    # ori_dataset = pd.read_csv("/Users/xumiaochun/jiawei/dataset_test.csv")
+    # y_pred_df = pd.read_csv("/Users/xumiaochun/jiawei/y_pred_test.csv")
+    # y_pred_score_df = pd.read_csv("/Users/xumiaochun/jiawei/anomaly_score_test.csv")
+    id_ = np.unique(ori_dataset.line_id)
+    ori_dataset["y_pred"] = 99
+    ori_dataset["y_pred_score"] = 99
+    k = 0
+
+    id_name = id_[0]
+    id_dataset = ori_dataset[ori_dataset['line_id'] == id_name]
+    id_dataset = id_dataset.reset_index(drop=True)
+    DAY_PNT = len(id_dataset.loc[id_dataset['Date'] == id_dataset['Date'].ix[int(len(id_dataset) / 2)]])
+    lenth = len(id_dataset)
+    k = 0
+    y_pred = y_pred_df.ix[0:  2 * DAY_PNT - 1].reset_index(drop=True)
+    y_score = y_pred_score_df.ix[0: 2 * DAY_PNT - 1].reset_index(drop=True)
+
+
+    for t in range(lenth - 2 * DAY_PNT, lenth):
+        id_dataset.y_pred.ix[t] = y_pred.y_pred_train.ix[(t - lenth + 2 * DAY_PNT)]
+        id_dataset.y_pred_score.ix[t] = y_score.anomaly_score_train.ix[(t - lenth + 2 * DAY_PNT)]
+    dataset_toprint = id_dataset
+    a_df = id_dataset[id_dataset.y_pred_score != 99].copy()
+    k = 1
+    for j in range(1,len(id_)):
+        id_name = id_[j]
+        id_dataset = ori_dataset[ori_dataset['line_id'] == id_name]
+        id_dataset = id_dataset.reset_index(drop=True)
+        DAY_PNT = len(id_dataset.loc[id_dataset['Date'] == id_dataset['Date'].ix[int(len(id_dataset) / 2)]])
+        lenth = len(id_dataset)
+        y_pred = y_pred_df.ix[2 * k * DAY_PNT: 2 * k * DAY_PNT + 2 * DAY_PNT-1].reset_index(drop=True)
+        y_score = y_pred_score_df.ix[2 * k * DAY_PNT:2 * k * DAY_PNT + 2 * DAY_PNT-1].reset_index(drop=True)
+
+        for t in range(lenth - 2 * DAY_PNT, lenth):
+            id_dataset.y_pred.ix[t] = y_pred.y_pred_train.ix[(t - lenth + 2 * DAY_PNT )]
+            id_dataset.y_pred_score.ix[t] = y_score.anomaly_score_train.ix[(t - lenth + 2 * DAY_PNT )]
+        k = k + 1
+        dataset_toprint = pd.concat([dataset_toprint,id_dataset],axis = 0)
+
+    dataset_toprint = pd.DataFrame(dataset_toprint)
+
+    return dataset_toprint
+
+def concat_test(ori_dataset,y_pred_df,y_pred_score_df):
     # ori_dataset = pd.read_csv("/Users/xumiaochun/jiawei/dataset_test.csv")
     # y_pred_df = pd.read_csv("/Users/xumiaochun/jiawei/y_pred_test.csv")
     # y_pred_score_df = pd.read_csv("/Users/xumiaochun/jiawei/anomaly_score_test.csv")
@@ -263,14 +307,13 @@ def concat(ori_dataset,y_pred_df,y_pred_score_df):
         id_dataset.y_pred_score.ix[t] = y_score.anomaly_score_test.ix[(t - lenth + 2 * DAY_PNT)]
     dataset_toprint = id_dataset
     a_df = id_dataset[id_dataset.y_pred_score != 99].copy()
-
+    k = 1
     for j in range(1,len(id_)):
         id_name = id_[j]
         id_dataset = ori_dataset[ori_dataset['line_id'] == id_name]
         id_dataset = id_dataset.reset_index(drop=True)
         DAY_PNT = len(id_dataset.loc[id_dataset['Date'] == id_dataset['Date'].ix[int(len(id_dataset) / 2)]])
         lenth = len(id_dataset)
-        k = 1
         y_pred = y_pred_df.ix[2 * k * DAY_PNT: 2 * k * DAY_PNT + 2 * DAY_PNT-1].reset_index(drop=True)
         y_score = y_pred_score_df.ix[2 * k * DAY_PNT:2 * k * DAY_PNT + 2 * DAY_PNT-1].reset_index(drop=True)
 
@@ -283,7 +326,6 @@ def concat(ori_dataset,y_pred_df,y_pred_score_df):
     dataset_toprint = pd.DataFrame(dataset_toprint)
 
     return dataset_toprint
-
 
 def check_result(wrong_pre,origin_dataset,place = None):
     # wrong_pre = pd.read_csv ('/Users/xumiaochun/jiawei/new_check_dataset_wrongpre2__test.csv')
@@ -346,14 +388,15 @@ if __name__ == "__main__":
     selected_features_train, labels_train = selecte_festures (selected_id,dataset_train)
     selected_features_test, labels_test = selecte_festures(selected_id,dataset_test)
 
+    savePklto(selected_features_train, "selected_features_train2.csv")
+    savePklto(selected_features_test, "selected_features_test2.csv")
 
     y_pred_train, anomaly_score_train, y_pred_test, anomaly_score_test = data_modeling_gbdt(selected_features_train, labels_train.anomaly,selected_features_test)
+    savePklto(y_pred_train,"y_pred_train.csv")
+    savePklto(anomaly_score_train,"anomaly_score_train.csv")
+    savePklto(y_pred_test,"y_pred_test.csv")
+    savePklto(anomaly_score_test,"anomaly_score_test.csv")
 
-    # predict_report_train = classification_report(labels_train.anomaly, y_pred_train, labels=[1,2])
-    # predict_report_test = classification_report(labels_test.anomaly, y_pred_test, labels=[1,2])
-
-    # print ("\npredict_report_train\n",predict_report_train)
-    # print ("\npredict_report_test\n",predict_report_test)
 
     print ("\n\nlabels_train.anomaly, y_pred_train\n", (classification_report(labels_train.anomaly, y_pred_train)))
     print ("\n\nlabels_test.anomaly, y_pred_test\n", (classification_report(labels_test.anomaly, y_pred_test)))
@@ -417,11 +460,42 @@ if __name__ == "__main__":
     # dataset_test = pd.concat([dataset_test,y_pred_test,anomaly_score_test],axis=1)
     # dataset_train_t.to_csv("dataset_train_t.csv",index=False)
     # dataset_test_t.to_csv("dataset_test_t.csv",index=False)
-    dataset_toprint_train = concat(dataset_train, y_pred_train, anomaly_score_train)
-    dataset_toprint_test = concat(dataset_test, y_pred_test, anomaly_score_test)
-    dataset_toprint_train.to_csv("concat_train_2re.csv",index = False)
-    dataset_toprint_test.to_csv("concat_test_2re.csv", index=False)
 
+    savePklto(dataset_train, "dataset_train2.csv")
+    savePklto(y_pred_train, "y_pred_train2.csv")
+    savePklto(anomaly_score_train, "anomaly_score_train2.csv")
+    savePklto(dataset_test, "dataset_test2.csv")
+    savePklto(y_pred_test, "y_pred_test2.csv")
+    savePklto(anomaly_score_test, "anomaly_score_test2.csv")
+    savePklto(selected_features_train, "selected_features_train2.csv")
+    savePklto(selected_features_test, "selected_features_test2.csv")
+    savePklto(labels_train, "labels_train2.csv")
+    savePklto(labels_test, "labels_test2.csv")
+    savePklto(new_check_dataset_wrongpre_test, "new_check_dataset_wrongpre_test2.csv")
+    savePklto(new_check_dataset_wrongpre_train, "new_check_dataset_wrongpre_train2.csv")
+    savePklto(selected_features_train, "selected_features_train2.csv")
+    savePklto(selected_features_test, "selected_features_test2.csv")
+    savePklto(new_check_dataset_test, "new_check_dataset_test2.csv")
+    savePklto(new_check_dataset_train, "new_check_dataset_train2.csv")
+
+    dataset_toprint_train = concat_train(dataset_train, y_pred_train, anomaly_score_train)
+    dataset_toprint_test = concat_test(dataset_test, y_pred_test, anomaly_score_test)
+
+
+
+
+    # dataset_train.to_csv("new_check/dataset_train.csv",index=False)
+    # y_pred_train.to_csv("new_check/y_pred_train.csv",index=False)
+    # anomaly_score_train.to_csv("new_check/anomaly_score_train.csv",index=False)
+    # dataset_test.to_csv("new_check/dataset_test.csv",index=False)
+    # y_pred_test.to_csv("new_check/y_pred_test.csv",index=False)
+    # anomaly_score_test.to_csv("new_check/anomaly_score_test.csv",index=False)
+
+    # dataset_toprint_train.to_csv("concat_train_2re.csv",index = False)
+    # dataset_toprint_test.to_csv("concat_test_2re.csv", index=False)
+
+    savePklto(dataset_toprint_train, "dataset_toprint_train2.csv")
+    savePklto(dataset_toprint_test, "dataset_toprint_test2.csv")
 
     df_train = dataset_toprint_train.copy()
     y_pred = []
@@ -452,19 +526,8 @@ if __name__ == "__main__":
     # Precision_Recall_Curve2(labels_train.anomaly, anomaly_score_train)
     # ffff(labels.anomaly, anomaly_score_train)
 
-    savePklto(dataset_train, "dataset_train2.csv")
-    savePklto(y_pred_train, "y_pred_train2.csv")
-    savePklto(anomaly_score_train, "anomaly_score_train2.csv")
-    savePklto(dataset_test, "dataset_test2.csv")
-    savePklto(y_pred_test, "y_pred_test2.csv")
-    savePklto(anomaly_score_test, "anomaly_score_test2.csv")
 
-    # dataset_train.to_csv("new_check/dataset_train.csv",index=False)
-    # y_pred_train.to_csv("new_check/y_pred_train.csv",index=False)
-    # anomaly_score_train.to_csv("new_check/anomaly_score_train.csv",index=False)
-    # dataset_test.to_csv("new_check/dataset_test.csv",index=False)
-    # y_pred_test.to_csv("new_check/y_pred_test.csv",index=False)
-    # anomaly_score_test.to_csv("new_check/anomaly_score_test.csv",index=False)
+
 
 
     for j in range(0, len(selected_id)):
@@ -490,69 +553,69 @@ if __name__ == "__main__":
         if f1_score_value<0.5:
             print ("f1_score<0.5__test","id_name:",id_name,anomaly_view(id_dataset,id_name))
 
-
-        ##add 整体pr曲线
-    ##案例分析：fscore少于0.5的曲线样本画图
-
-
-
-    # df = new_check_dataset_wrongpre
-    # print(df.head())
-    # df["timestamp"] = df["timestamp"].map(millisec_to_str)
-    #
-    # pic_path = join("/Users/xumiaochun/jiawei", "tmp/pic_valid/")
-
-
-
-
-# #数据特征提取要based整个数据集combine_features_calculate（所有id）；；
+#
+#         ##add 整体pr曲线
+#     ##案例分析：fscore少于0.5的曲线样本画图
 #
 #
 #
-# ########——————————后续检测
-#     # anomaly_view(total_dataset)#观察异常点和整体时序走向 （未进行数据平稳处理前）
-#     # #判断序列的平稳性
-#     # value_stable_determinate_view(total_dataset)
-#
-#     # total_dataset= model_makesense_determinate (total_dataset)
-#
-    # list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
-#
+#     # df = new_check_dataset_wrongpre
+#     # print(df.head())
+#     # df["timestamp"] = df["timestamp"].map(millisec_to_str)
 #     #
-#     # #
-#     # # global x_features_selected
-#     # warnings.filterwarnings("ignore")
-#     # window = 14
-#     # DEFAULT_WINDOW = 14
-#     # k = pd.read_csv('data/ydata-labeled-time-series-anomalies-v1_0/A4Benchmark/totoal_file_and_name.csv')
-#     # k = pd.DataFrame(k)
-#     # list_to_print = []
-#     # for i in range(0,len(k)):
-#     #     location = k["location"].ix[i]
-#     #     filename = k["filename"].ix[i]
-#     #     total_dataset = pd.read_csv('{}'.format(location))
-#     #     if i >= 124:
-#     #         total_dataset.rename(columns={"timestamp":"timestamps", "is_anomaly":"anomaly"}, inplace=True)
-#     #
-#     #     total_dataset = characteristics_format_match(total_dataset) #total_dataset中含有两新列----Date和Hour_Minute
-#     #     DAY_PNT = len(total_dataset.loc[total_dataset['Date'] == total_dataset['Date'].ix[len(total_dataset)/2]])
-#     #     lenth_total_dataset = len(total_dataset)
-#     #     win_sli = window + 7 * DAY_PNT
-#     #     lenth_new_dataset = len(total_dataset.ix[win_sli-1:]) #真正有特征值部分的数据集
-#     #
-#     #     training_data, test_data = train_test_split(total_dataset.ix[win_sli-1:], test_size = 0.3, shuffle=False)
-#     #     train_ = total_dataset.ix[win_sli-1:int(lenth_new_dataset*0.7)+win_sli-1]
-#     #     test_ = total_dataset.ix[int(lenth_new_dataset*0.7)+win_sli-1:]
-#     #
-#     #     if win_sli < int(len(total_dataset)*0.3) and len(test_.loc[test_['anomaly'] == 1]) > 0 and len(train_.loc[train_['anomaly'] == 1]) > 0: ####（要加入判断时间序列的分析有没有价值的判断方法）
-#     #         anomaly_view(total_dataset)#观察异常点和整体时序走向 （未进行数据平稳处理前）
-#     #         # #判断序列的平稳性
-#     #         value_stable_determinate(total_dataset)
-#     #
-#     #         total_dataset= model_makesense_determinate (total_dataset)
-#     #
-#     #         list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
-#     #
-#     #         break ##只跑一个数据集
+#     # pic_path = join("/Users/xumiaochun/jiawei", "tmp/pic_valid/")
 #
 #
+#
+#
+# # #数据特征提取要based整个数据集combine_features_calculate（所有id）；；
+# #
+# #
+# #
+# # ########——————————后续检测
+# #     # anomaly_view(total_dataset)#观察异常点和整体时序走向 （未进行数据平稳处理前）
+# #     # #判断序列的平稳性
+# #     # value_stable_determinate_view(total_dataset)
+# #
+# #     # total_dataset= model_makesense_determinate (total_dataset)
+# #
+#     # list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
+# #
+# #     #
+# #     # #
+# #     # # global x_features_selected
+# #     # warnings.filterwarnings("ignore")
+# #     # window = 14
+# #     # DEFAULT_WINDOW = 14
+# #     # k = pd.read_csv('data/ydata-labeled-time-series-anomalies-v1_0/A4Benchmark/totoal_file_and_name.csv')
+# #     # k = pd.DataFrame(k)
+# #     # list_to_print = []
+# #     # for i in range(0,len(k)):
+# #     #     location = k["location"].ix[i]
+# #     #     filename = k["filename"].ix[i]
+# #     #     total_dataset = pd.read_csv('{}'.format(location))
+# #     #     if i >= 124:
+# #     #         total_dataset.rename(columns={"timestamp":"timestamps", "is_anomaly":"anomaly"}, inplace=True)
+# #     #
+# #     #     total_dataset = characteristics_format_match(total_dataset) #total_dataset中含有两新列----Date和Hour_Minute
+# #     #     DAY_PNT = len(total_dataset.loc[total_dataset['Date'] == total_dataset['Date'].ix[len(total_dataset)/2]])
+# #     #     lenth_total_dataset = len(total_dataset)
+# #     #     win_sli = window + 7 * DAY_PNT
+# #     #     lenth_new_dataset = len(total_dataset.ix[win_sli-1:]) #真正有特征值部分的数据集
+# #     #
+# #     #     training_data, test_data = train_test_split(total_dataset.ix[win_sli-1:], test_size = 0.3, shuffle=False)
+# #     #     train_ = total_dataset.ix[win_sli-1:int(lenth_new_dataset*0.7)+win_sli-1]
+# #     #     test_ = total_dataset.ix[int(lenth_new_dataset*0.7)+win_sli-1:]
+# #     #
+# #     #     if win_sli < int(len(total_dataset)*0.3) and len(test_.loc[test_['anomaly'] == 1]) > 0 and len(train_.loc[train_['anomaly'] == 1]) > 0: ####（要加入判断时间序列的分析有没有价值的判断方法）
+# #     #         anomaly_view(total_dataset)#观察异常点和整体时序走向 （未进行数据平稳处理前）
+# #     #         # #判断序列的平稳性
+# #     #         value_stable_determinate(total_dataset)
+# #     #
+# #     #         total_dataset= model_makesense_determinate (total_dataset)
+# #     #
+# #     #         list_r = circulation_file_predict_origin_features_select_methods(total_dataset)
+# #     #
+# #     #         break ##只跑一个数据集
+# #
+# #

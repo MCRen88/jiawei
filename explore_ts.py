@@ -18,14 +18,27 @@ from utils import savePNG,millisec_to_str
 import os
 from sklearn.metrics import precision_recall_curve,classification_report, confusion_matrix
 from visualize.plot_forcast_result import anomaly_score_plot_hist
-
+from evaluate.train_test_evaluate import prediction_evaluate
 N_color = 10
 
 DAY_SECONDS = 1440 * 60
 
 FIGURE_SIZE = (16, 7)
 
+from os.path import dirname, join, exists, isdir, split, isfile, abspath
+import pickle as pkl
+def savePklto(py_obj, targetDir):
+    print("[savePklto]%s" % targetDir)
+    with open(targetDir, "wb") as f:
+        pkl.dump(py_obj, f)
+    return
 
+
+def loadPklfrom(sourceDir):
+    print("[loadPklfrom]%s" % sourceDir)
+    with open(sourceDir, "rb") as f:
+        py_obj = pkl.load(f)
+    return py_obj
 
 def gen_pic():
     """
@@ -116,7 +129,7 @@ def select_data():
             a1 = a1.ix[k:].reset_index(drop=True)
         t = pd.concat([t,a1],axis=0)
 
-    t.to_csv("/Users/xumiaochun/jiawei/tmp/selected_data_test.csv",index = False)
+    t.to_csv("/Users/xumiaochun/jiawei/tmp/aggregate_2.csv",index = False)
 
 
 def check_result():
@@ -151,12 +164,18 @@ def check_result():
 
 def concat():
     ori_dataset = pd.read_csv("/Users/xumiaochun/jiawei/dataset_test.csv")
-    y_pred_df = pd.read_csv("/Users/xumiaochun/jiawei/y_pred_test.csv")
-    y_pred_score_df = pd.read_csv("/Users/xumiaochun/jiawei/anomaly_score_test.csv")
+    y_pred_df = loadPklfrom("/Users/xumiaochun/jiawei/y_pred_test.csv")
+    y_pred_score_df = loadPklfrom("/Users/xumiaochun/jiawei/anomaly_score_test.csv")
+    y_pred_df = pd.DataFrame(y_pred_df,columns={'y_pred_test'})
+    y_pred_score_df = pd.DataFrame(y_pred_score_df,columns={'anomaly_score_test'})
+
+    # selected_id = pd.read_csv('/Users/xumiaochun/jiawei/tmp/selected_name_list2.csv')
     id_ = np.unique(ori_dataset.line_id)
+    # id_ = selected_id.selected_id
+
     ori_dataset["y_pred"] = 99
     ori_dataset["y_pred_score"] = 99
-    k = 0
+
 
     id_name = id_[0]
     id_dataset = ori_dataset[ori_dataset['line_id'] == id_name]
@@ -164,35 +183,89 @@ def concat():
     DAY_PNT = len(id_dataset.loc[id_dataset['Date'] == id_dataset['Date'].ix[int(len(id_dataset) / 2)]])
     lenth = len(id_dataset)
     k = 0
-    y_pred = y_pred_df.ix[0:  2 * DAY_PNT - 1].reset_index(drop=True)
-    y_score = y_pred_score_df.ix[0: 2 * DAY_PNT - 1].reset_index(drop=True)
+    y_pred = y_pred_df.ix[0:  2 * DAY_PNT].reset_index(drop=True)
+    y_score = y_pred_score_df.ix[0: 2 * DAY_PNT].reset_index(drop=True)
 
 
-    for t in range(lenth - 2 * DAY_PNT, lenth):
-        id_dataset.y_pred.ix[t] = y_pred.y_pred_test.ix[(t - lenth + 2 * DAY_PNT)]
-        id_dataset.y_pred_score.ix[t] = y_score.anomaly_score_test.ix[(t - lenth + 2 * DAY_PNT)]
+    for t in range(lenth - 2 * DAY_PNT-1, lenth):
+        id_dataset.y_pred.ix[t] = y_pred.y_pred_test.ix[(t - lenth + 2 * DAY_PNT+1)]
+        id_dataset.y_pred_score.ix[t] = y_score.anomaly_score_test.ix[(t - lenth + 2 * DAY_PNT+1)] ##!!
     dataset_toprint = id_dataset
-    a_df = id_dataset[id_dataset.y_pred_score != 99].copy()
 
     for j in range(1,len(id_)):
+    # for j in range(1, 3):
         id_name = id_[j]
         id_dataset = ori_dataset[ori_dataset['line_id'] == id_name]
         id_dataset = id_dataset.reset_index(drop=True)
         DAY_PNT = len(id_dataset.loc[id_dataset['Date'] == id_dataset['Date'].ix[int(len(id_dataset) / 2)]])
         lenth = len(id_dataset)
         k = 1
-        y_pred = y_pred_df.ix[2 * k * DAY_PNT: 2 * k * DAY_PNT + 2 * DAY_PNT-1].reset_index(drop=True)
-        y_score = y_pred_score_df.ix[2 * k * DAY_PNT:2 * k * DAY_PNT + 2 * DAY_PNT-1].reset_index(drop=True)
+        y_pred = y_pred_df.ix[2 * k * DAY_PNT: 2 * k * DAY_PNT + 2 * DAY_PNT].reset_index(drop=True)
+        y_score = y_pred_score_df.ix[2 * k * DAY_PNT:2 * k * DAY_PNT + 2 * DAY_PNT].reset_index(drop=True)
 
-        for t in range(lenth - 2 * DAY_PNT, lenth):
-            id_dataset.y_pred.ix[t] = y_pred.y_pred_test.ix[(t - lenth + 2 * DAY_PNT )]
-            id_dataset.y_pred_score.ix[t] = y_score.anomaly_score_test.ix[(t - lenth + 2 * DAY_PNT )]
+        for t in range(lenth - 2 * DAY_PNT-1, lenth):
+            id_dataset.y_pred.ix[t] = y_pred.y_pred_test.ix[(t - lenth + 2 * DAY_PNT+1)]
+            id_dataset.y_pred_score.ix[t] = y_score.anomaly_score_test.ix[(t - lenth + 2 * DAY_PNT+1)] ##!!
         k = k + 1
         dataset_toprint = pd.concat([dataset_toprint,id_dataset],axis = 0)
-
+    dataset_toprint = dataset_toprint.reset_index(drop=True)
     dataset_toprint = pd.DataFrame(dataset_toprint)
+    a_df = dataset_toprint[dataset_toprint.y_pred_score != 99]
+    a_c_df =  a_df[a_df.anomaly != a_df.y_pred]
+    print (a_c_df)
+    #
+    dataset_toprint.to_csv("/Users/xumiaochun/jiawei/tmp/data/multiple/concat_test222",index=False)
 
-    dataset_toprint.to_csv("ccheck_top3.csv",index = False)
+def concat_train():
+
+    ori_dataset = pd.read_csv("/Users/xumiaochun/jiawei/dataset_train.csv")
+    y_pred_df = loadPklfrom("/Users/xumiaochun/jiawei/y_pred_train.csv")
+    y_pred_score_df = loadPklfrom("/Users/xumiaochun/jiawei/anomaly_score_train.csv")
+    y_pred_df = pd.DataFrame(y_pred_df,columns={'y_pred_train'})
+    y_pred_score_df = pd.DataFrame(y_pred_score_df,columns={'anomaly_score_train'})
+    id_ = np.unique(ori_dataset.line_id)
+
+    ori_dataset["y_pred"] = 99
+    ori_dataset["y_pred_score"] = 99
+
+
+    id_name = id_[0]
+    id_dataset = ori_dataset[ori_dataset['line_id'] == id_name]
+    id_dataset = id_dataset.reset_index(drop=True)
+    DAY_PNT = len(id_dataset.loc[id_dataset['Date'] == id_dataset['Date'].ix[int(len(id_dataset) / 2)]])
+    lenth = len(id_dataset)
+    k = 0
+    y_pred = y_pred_df.ix[0:  2 * DAY_PNT].reset_index(drop=True)
+    y_score = y_pred_score_df.ix[0: 2 * DAY_PNT].reset_index(drop=True)
+
+
+    for t in range(lenth - 2 * DAY_PNT-1, lenth):
+        id_dataset.y_pred.ix[t] = y_pred.y_pred_train.ix[(t - lenth + 2 * DAY_PNT+1)]
+        id_dataset.y_pred_score.ix[t] = y_score.anomaly_score_train.ix[(t - lenth + 2 * DAY_PNT+1)]
+    dataset_toprint = id_dataset
+
+    for j in range(1,len(id_)):
+    # for j in range(1, 3):
+        id_name = id_[j]
+        id_dataset = ori_dataset[ori_dataset['line_id'] == id_name]
+        id_dataset = id_dataset.reset_index(drop=True)
+        DAY_PNT = len(id_dataset.loc[id_dataset['Date'] == id_dataset['Date'].ix[int(len(id_dataset) / 2)]])
+        lenth = len(id_dataset)
+        k = 1
+        y_pred = y_pred_df.ix[2 * k * DAY_PNT: 2 * k * DAY_PNT + 2 * DAY_PNT].reset_index(drop=True)
+        y_score = y_pred_score_df.ix[2 * k * DAY_PNT:2 * k * DAY_PNT + 2 * DAY_PNT].reset_index(drop=True)
+
+        for t in range(lenth - 2 * DAY_PNT-1, lenth):
+            id_dataset.y_pred.ix[t] = y_pred.y_pred_train.ix[(t - lenth + 2 * DAY_PNT+1)]
+            id_dataset.y_pred_score.ix[t] = y_score.anomaly_score_train.ix[(t - lenth + 2 * DAY_PNT+1)] ##!!
+        k = k + 1
+        dataset_toprint = pd.concat([dataset_toprint,id_dataset],axis = 0)
+    dataset_toprint = dataset_toprint.reset_index(drop=True)
+    dataset_toprint = pd.DataFrame(dataset_toprint)
+    a_df = dataset_toprint[dataset_toprint.y_pred_score != 99]
+    a_c_df =  a_df[a_df.anomaly != a_df.y_pred]
+    print (a_c_df)
+    dataset_toprint.to_csv("/Users/xumiaochun/jiawei/tmp/data/multiple/concat_train222",index= False)
 
 def check():
     pic_path = join("/Users/xumiaochun/jiawei", "tmp/pic_check/result_test2/score/")
@@ -212,4 +285,12 @@ def check():
 
 
 if __name__ == "__main__":
-    check()
+    # labels = loadPklfrom("/Users/xumiaochun/jiawei/labels_train2.csv")
+    # y_pred = loadPklfrom("/Users/xumiaochun/jiawei/y_pred_train2.csv")
+    # concat_test = pd.read_csv("/Users/xumiaochun/jiawei/concat_test.csv")
+    # print (y_pred.head())
+    # # view_dataset = concat_test[concat_test["y_pred"] != 99]
+    # prediction_evaluate(labels.anomaly,y_pred.y_pred_train)
+
+    concat()
+    concat_train()
