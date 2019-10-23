@@ -23,6 +23,13 @@ from scipy import interp
 from sklearn.metrics import classification_report, confusion_matrix,f1_score
 from visualize.plot_ts import anomaly_view
 
+N_color = 10
+
+DAY_SECONDS = 1440 * 60
+
+FIGURE_SIZE = (16, 7)
+
+
 # def ffff(y, scores):
 #     n_classes = len(y)
 #
@@ -237,15 +244,12 @@ def anomaly_score_plot_hist(df, detect_days = 2, plot_day_index=[1,7], anom_col 
     """
     fig = plt.figure()
     ax = fig.add_subplot(111)
-
     day_pnts = int( DAY_SECONDS / freq)
     print("day_pnts",day_pnts)
     detect_points = detect_days * day_pnts
     print("detect_points",detect_points)
-
     plt.figure(figsize=FIGURE_SIZE)
     df = df.sort_values("timestamp")
-
     df["timestamp"] = df["timestamp"].map(pd.to_datetime)
     print(df.head())
     for shift_ in plot_day_index:
@@ -258,23 +262,13 @@ def anomaly_score_plot_hist(df, detect_days = 2, plot_day_index=[1,7], anom_col 
     plt.legend()
     if anom_col is None:
         return plt
-
     anom_df_slice = df[df[anom_col] == 1][value_col]
     info = "%s#%spts" % (anom_col, anom_df_slice.shape[0])
     if anom_df_slice.shape[0] >= 1:
         anom_df_slice.plot(c="g", linewidth=5, style='>', label=info)
-
-## --加入预测部分
-    # ax2 = ax.twinx()
-    #
-    # pre_anom_df_slice = df[df[pre_anom_col] == 1][value_col]
-    # info = "%s#%spts" % (pre_anom_col, pre_anom_df_slice.shape[0])
-    # if pre_anom_df_slice.shape[0] >= 1:
-    #     pre_anom_df_slice.plot(c="red", linewidth=5, style='+', label=info)
-    #
-
+# --加入预测部分
     ax2 = ax.twinx()
-    ax2.plot(df.Hour_Minute, df.anomaly_pred_score, label = 'Anomaly Score')
+    ax2.plot(df.Hour_Minute, df.y_pred_score, label = 'Anomaly Score', c="red")
     ax.legend(loc = 'best')
     ax2.legend(loc = 'best')
     plt.xticks(rotation=30)
@@ -284,9 +278,6 @@ def anomaly_score_plot_hist(df, detect_days = 2, plot_day_index=[1,7], anom_col 
     ax2.set_ylim(0, 1)
     plt.xticks(rotation = 30)
     plt.title('Anomaly Score Date View')
-    plt.show()
-
-
     return plt
 
 

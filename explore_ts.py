@@ -17,7 +17,7 @@ from settings import Config_json,get_user_data_dir
 from utils import savePNG,millisec_to_str
 import os
 from sklearn.metrics import precision_recall_curve,classification_report, confusion_matrix
-
+from visualize.plot_forcast_result import anomaly_score_plot_hist
 
 N_color = 10
 
@@ -194,6 +194,22 @@ def concat():
 
     dataset_toprint.to_csv("ccheck_top3.csv",index = False)
 
-if __name__ == "__main__":
-    concat()
+def check():
+    pic_path = join("/Users/xumiaochun/jiawei", "tmp/pic_check/result_test2/score/")
+    dff = pd.read_csv("/Users/xumiaochun/jiawei/concat_test.csv")
+    dff.rename(columns={"timestamps":"timestamp", "anomaly":"label","value":"point"}, inplace=True)
+    line_id_list = np.unique(dff.line_id)
+    for l_id in line_id_list:
+        l_id_list = l_id.split("valid")
+        VALID_DAY = l_id_list[-1].replace("D", "")
+        if int(VALID_DAY) <10:
+            continue
+        df_slice = dff[dff.line_id == l_id].copy()
+        # plt = anomaly_view(df_slice)
+        plt = anomaly_score_plot_hist(df_slice, detect_days = 2, plot_day_index=[1,7], anom_col = "label" ,pre_anom_col = "y_pred", value_col = "point", freq = 60)
+        # print (df_slice.head())
+        savePNG(plt, targetDir=join(pic_path, "%s.png" % l_id))
 
+
+if __name__ == "__main__":
+    check()

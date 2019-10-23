@@ -384,7 +384,7 @@ if __name__ == "__main__":
     print (new_check_dataset_wrongpre_train.head(2),new_check_dataset_wrongpre_train.columns.tolist())
     print ('\ncontain wrong pred id include__train:\n',np.unique(new_check_dataset_wrongpre_train.line_id))
     print ('\nwrong_pred__train\n',new_check_dataset_wrongpre_train)
-    new_check_dataset_wrongpre_train.to_csv("new_check/new_check_dataset_wrongpre2__train.csv",index=False)
+    # new_check_dataset_wrongpre_train.to_csv("new_check/new_check_dataset_wrongpre2__train.csv",index=False)
 
 
     y_pred_test =pd.DataFrame(y_pred_test, columns={'y_pred_test'})
@@ -419,8 +419,8 @@ if __name__ == "__main__":
     # dataset_test_t.to_csv("dataset_test_t.csv",index=False)
     dataset_toprint_train = concat(dataset_train, y_pred_train, anomaly_score_train)
     dataset_toprint_test = concat(dataset_test, y_pred_test, anomaly_score_test)
-    dataset_toprint_train.to_csv("new_check/concat_train_2re.csv",index = False)
-    dataset_toprint_test.to_csv("new_check/concat_test_2re.csv", index=False)
+    dataset_toprint_train.to_csv("concat_train_2re.csv",index = False)
+    dataset_toprint_test.to_csv("concat_test_2re.csv", index=False)
 
 
     df_train = dataset_toprint_train.copy()
@@ -451,6 +451,21 @@ if __name__ == "__main__":
     print("report_test",confusion_test)
     # Precision_Recall_Curve2(labels_train.anomaly, anomaly_score_train)
     # ffff(labels.anomaly, anomaly_score_train)
+
+    savePklto(dataset_train, "dataset_train2.csv")
+    savePklto(y_pred_train, "y_pred_train2.csv")
+    savePklto(anomaly_score_train, "anomaly_score_train2.csv")
+    savePklto(dataset_test, "dataset_test2.csv")
+    savePklto(y_pred_test, "y_pred_test2.csv")
+    savePklto(anomaly_score_test, "anomaly_score_test2.csv")
+
+    # dataset_train.to_csv("new_check/dataset_train.csv",index=False)
+    # y_pred_train.to_csv("new_check/y_pred_train.csv",index=False)
+    # anomaly_score_train.to_csv("new_check/anomaly_score_train.csv",index=False)
+    # dataset_test.to_csv("new_check/dataset_test.csv",index=False)
+    # y_pred_test.to_csv("new_check/y_pred_test.csv",index=False)
+    # anomaly_score_test.to_csv("new_check/anomaly_score_test.csv",index=False)
+
 
     for j in range(0, len(selected_id)):
         # for j in range(0, 1):
